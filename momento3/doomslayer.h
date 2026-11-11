@@ -2,6 +2,7 @@
 #define DOOMSLAYER_H
 
 #include "personaje.h"
+#include "proyectil.h"
 
 class DoomSlayer : public Personaje
 {
@@ -10,7 +11,7 @@ public:
 
     void correr(int direccion);
     void saltar();
-    void disparar();
+    Proyectil* disparar();
     void interactuar();
     void actualizar();
 
@@ -18,6 +19,7 @@ private:
     int velocidadX;
     int velocidadY;
     int sueloY;
+    int miraHacia;
     bool enElSuelo;
 };
 

@@ -5,6 +5,7 @@ DoomSlayer::DoomSlayer(int x, int y)
     velocidadX(0),
     velocidadY(0),
     sueloY(y),
+    miraHacia(1),
     enElSuelo(true)
 {
 }
@@ -12,6 +13,9 @@ DoomSlayer::DoomSlayer(int x, int y)
 void DoomSlayer::correr(int direccion)
 {
     velocidadX = direccion * 5;
+    if (direccion != 0) {
+        miraHacia = direccion;
+    }
 }
 
 void DoomSlayer::saltar()
@@ -22,8 +26,11 @@ void DoomSlayer::saltar()
     }
 }
 
-void DoomSlayer::disparar()
+Proyectil* DoomSlayer::disparar()
 {
+    int xBala = (miraHacia > 0) ? x + 40 : x - 10;
+    int yBala = y + 25;
+    return new Proyectil(xBala, yBala, miraHacia);
 }
 
 void DoomSlayer::interactuar()

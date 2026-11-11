@@ -4,9 +4,11 @@
 #include <QWidget>
 #include <QTimer>
 #include <QSet>
+#include <QList>
 #include <QKeyEvent>
 #include <QPaintEvent>
 #include "doomslayer.h"
+#include "proyectil.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }
@@ -30,10 +32,12 @@ private slots:
 
 private:
     void actualizarMovimiento();
+    void actualizarProyectiles();
 
     Ui::Widget *ui;
     QTimer *temporizador;
     DoomSlayer *doom;
+    QList<Proyectil*> proyectiles;
     QSet<int> teclas;
 };
 

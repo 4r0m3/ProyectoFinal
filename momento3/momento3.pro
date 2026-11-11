@@ -10,11 +10,13 @@ SOURCES += \
     doomslayer.cpp \
     main.cpp \
     personaje.cpp \
+    proyectil.cpp \
     widget.cpp
 
 HEADERS += \
     doomslayer.h \
     personaje.h \
+    proyectil.h \
     widget.h
 
 FORMS += \

@@ -18,6 +18,7 @@ Widget::Widget(QWidget *parent)
 
 Widget::~Widget()
 {
+    qDeleteAll(proyectiles);
     delete doom;
     delete ui;
 }
@@ -25,13 +26,19 @@ Widget::~Widget()
 void Widget::keyPressEvent(QKeyEvent *evento)
 {
     if (evento->isAutoRepeat()) return;
+
     teclas.insert(evento->key());
     actualizarMovimiento();
+
+    if (evento->key() == Qt::Key_Space) {
+        proyectiles.append(doom->disparar());
+    }
 }
 
 void Widget::keyReleaseEvent(QKeyEvent *evento)
 {
     if (evento->isAutoRepeat()) return;
+
     teclas.remove(evento->key());
     actualizarMovimiento();
 }
@@ -44,10 +51,23 @@ void Widget::actualizarMovimiento()
     doom->correr(direccion);
 }
 
+void Widget::actualizarProyectiles()
+{
+    for (int i = proyectiles.size() - 1; i >= 0; i--) {
+        proyectiles[i]->actualizar();
+
+        if (proyectiles[i]->fueraDePantalla(width())) {
+            delete proyectiles[i];
+            proyectiles.removeAt(i);
+        }
+    }
+}
+
 void Widget::actualizarJuego()
 {
     if (teclas.contains(Qt::Key_W)) doom->saltar();
     doom->actualizar();
+    actualizarProyectiles();
     update();
 }
 
@@ -59,4 +79,8 @@ void Widget::paintEvent(QPaintEvent *evento)
     pintor.fillRect(rect(), QColor(30, 30, 30));
     pintor.fillRect(0, 460, width(), 40, QColor(90, 60, 40));
     pintor.fillRect(doom->getX(), doom->getY(), 40, 60, QColor(200, 40, 40));
+
+    for (Proyectil *bala : proyectiles) {
+        pintor.fillRect(bala->getX(), bala->getY(), 10, 4, QColor(255, 220, 0));
+    }
 }
