@@ -1,6 +1,9 @@
 #ifndef DOOMSLAYER_H
 #define DOOMSLAYER_H
 
+#include <QPixmap>
+#include <QPainter>
+#include <QList>
 #include "personaje.h"
 #include "proyectil.h"
 
@@ -11,9 +14,10 @@ public:
 
     void correr(int direccion);
     void saltar();
-    Proyectil* disparar();
+    QList<Proyectil*> disparar();
     void interactuar();
     void actualizar();
+    void dibujar(QPainter &pintor);
 
 private:
     int velocidadX;
@@ -21,6 +25,14 @@ private:
     int sueloY;
     int miraHacia;
     bool enElSuelo;
+
+    int cartuchos;
+    int esperaRecarga;
+    int ticksDisparo;
+
+    QPixmap hoja;
+    int cuadroActual;
+    int contadorTicks;
 };
 
 #endif

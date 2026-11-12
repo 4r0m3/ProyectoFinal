@@ -78,7 +78,7 @@ void Widget::paintEvent(QPaintEvent *evento)
 
     pintor.fillRect(rect(), QColor(30, 30, 30));
     pintor.fillRect(0, 460, width(), 40, QColor(90, 60, 40));
-    pintor.fillRect(doom->getX(), doom->getY(), 40, 60, QColor(200, 40, 40));
+    doom->dibujar(pintor);
 
     for (Proyectil *bala : proyectiles) {
         pintor.fillRect(bala->getX(), bala->getY(), 10, 4, QColor(255, 220, 0));
