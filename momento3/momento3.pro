@@ -8,14 +8,18 @@ CONFIG += c++17
 
 SOURCES += \
     doomslayer.cpp \
+    enemigos.cpp \
     main.cpp \
     personaje.cpp \
+    plataforma.cpp \
     proyectil.cpp \
     widget.cpp
 
 HEADERS += \
     doomslayer.h \
+    enemigos.h \
     personaje.h \
+    plataforma.h \
     proyectil.h \
     widget.h
 

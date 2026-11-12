@@ -4,6 +4,7 @@
 #include <QPixmap>
 #include <QPainter>
 #include <QList>
+#include <QRect>
 #include "personaje.h"
 #include "proyectil.h"
 
@@ -18,6 +19,10 @@ public:
     void interactuar();
     void actualizar();
     void dibujar(QPainter &pintor);
+    void setSuelo(int nuevoSuelo);
+
+    void golpeado(int direccion, int dano);
+    QRect getRect() const;
 
 private:
     int velocidadX;
@@ -29,6 +34,7 @@ private:
     int cartuchos;
     int esperaRecarga;
     int ticksDisparo;
+    int ticksInvulnerable;
 
     QPixmap hoja;
     int cuadroActual;

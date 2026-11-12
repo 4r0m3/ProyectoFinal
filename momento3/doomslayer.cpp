@@ -18,6 +18,8 @@ const int TICKS_SPRITE_DISPARO = 10;
 const int CARTUCHOS_MAXIMOS = 2;
 const int TICKS_DE_RECARGA = 60;
 
+const int TICKS_INVULNERABLE = 60;
+
 DoomSlayer::DoomSlayer(int x, int y)
     : Personaje(x, y, 100),
     velocidadX(0),
@@ -28,6 +30,7 @@ DoomSlayer::DoomSlayer(int x, int y)
     cartuchos(CARTUCHOS_MAXIMOS),
     esperaRecarga(0),
     ticksDisparo(0),
+    ticksInvulnerable(0),
     cuadroActual(0),
     contadorTicks(0)
 {
@@ -77,12 +80,35 @@ void DoomSlayer::interactuar()
 {
 }
 
+void DoomSlayer::golpeado(int direccion, int dano)
+{
+    if (ticksInvulnerable > 0) {
+        return;
+    }
+
+    recibirDano(dano);
+    ticksInvulnerable = TICKS_INVULNERABLE;
+
+    x += direccion * 40;
+    velocidadY = -8;
+    enElSuelo = false;
+}
+
+QRect DoomSlayer::getRect() const
+{
+    return QRect(x, y, TAMANO * ESCALA, TAMANO * ESCALA);
+}
+
 void DoomSlayer::actualizar()
 {
     x += velocidadX;
 
     if (ticksDisparo > 0) {
         ticksDisparo--;
+    }
+
+    if (ticksInvulnerable > 0) {
+        ticksInvulnerable--;
     }
 
     if (esperaRecarga > 0) {
@@ -117,6 +143,10 @@ void DoomSlayer::actualizar()
 
 void DoomSlayer::dibujar(QPainter &pintor)
 {
+    if (ticksInvulnerable > 0 && (ticksInvulnerable / 5) % 2 == 0) {
+        return;
+    }
+
     QRect origen;
     if (ticksDisparo > 0) {
         origen = QRect(DISPARO_X, DISPARO_Y, TAMANO, TAMANO);
@@ -136,5 +166,15 @@ void DoomSlayer::dibujar(QPainter &pintor)
         pintor.scale(-1, 1);
         pintor.drawPixmap(QRect(0, 0, lado, lado), hoja, origen);
         pintor.restore();
+    }
+}
+
+void DoomSlayer::setSuelo(int nuevoSuelo)
+{
+    sueloY = nuevoSuelo;
+
+    if (enElSuelo && y < sueloY) {
+        enElSuelo = false;
+        velocidadY = 0;
     }
 }

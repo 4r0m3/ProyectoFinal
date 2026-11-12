@@ -1,10 +1,10 @@
 #include "proyectil.h"
 
-Proyectil::Proyectil(int x, int y, int direccion, int gravedad)
+Proyectil::Proyectil(int x, int y, int direccion, int velocidadY, int gravedad)
     : x(x),
     y(y),
     velocidadX(direccion * 12),
-    velocidadY(0),
+    velocidadY(velocidadY),
     gravedad(gravedad)
 {
 }
@@ -23,3 +23,8 @@ bool Proyectil::fueraDePantalla(int anchoPantalla) const
 
 int Proyectil::getX() const { return x; }
 int Proyectil::getY() const { return y; }
+
+QRect Proyectil::getRect() const
+{
+    return QRect(x, y, 10, 4);
+}
