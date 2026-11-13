@@ -3,14 +3,9 @@
 
 #include <QWidget>
 #include <QTimer>
-#include <QSet>
-#include <QList>
 #include <QKeyEvent>
 #include <QPaintEvent>
-#include "doomslayer.h"
-#include "proyectil.h"
-#include "enemigos.h"
-#include "plataforma.h"
+#include "nivellateral.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }
@@ -33,18 +28,9 @@ private slots:
     void actualizarJuego();
 
 private:
-    void actualizarMovimiento();
-    void actualizarProyectiles();
-    void actualizarSuelo();
-    void revisarColisiones();
-
     Ui::Widget *ui;
     QTimer *temporizador;
-    DoomSlayer *doom;
-    QList<Proyectil*> proyectiles;
-    QList<Enemigos*> enemigos;
-    QList<Plataforma*> plataformas;
-    QSet<int> teclas;
+    NivelLateral *nivel;
 };
 
 #endif

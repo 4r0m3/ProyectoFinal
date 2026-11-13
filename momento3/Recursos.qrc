@@ -1,5 +1,9 @@
 <RCC>
     <qresource prefix="/imagenes">
         <file>sprite/Movimientos.png</file>
+        <file>sprite/FondoNivel1.jpg</file>
+        <file>sprite/Suelo1.png</file>
+        <file>sprite/Suelo2.png</file>
     </qresource>
+    <qresource prefix="/"/>
 </RCC>

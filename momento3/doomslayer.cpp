@@ -19,6 +19,9 @@ const int CARTUCHOS_MAXIMOS = 2;
 const int TICKS_DE_RECARGA = 60;
 
 const int TICKS_INVULNERABLE = 60;
+const int DURACION_FURIA = 300;
+const int VELOCIDAD_NORMAL = 5;
+const int VELOCIDAD_FURIA = 8;
 
 DoomSlayer::DoomSlayer(int x, int y)
     : Personaje(x, y, 100),
@@ -32,14 +35,18 @@ DoomSlayer::DoomSlayer(int x, int y)
     ticksDisparo(0),
     ticksInvulnerable(0),
     cuadroActual(0),
-    contadorTicks(0)
+    contadorTicks(0),
+    llave(false),
+    ticksFuria(0),
+    direccionX(0)
 {
     hoja.load(":/imagenes/sprite/Movimientos");
 }
 
 void DoomSlayer::correr(int direccion)
 {
-    velocidadX = direccion * 5;
+    direccionX = direccion;
+    velocidadX = direccion * VELOCIDAD_NORMAL;
     if (direccion != 0) {
         miraHacia = direccion;
     }
@@ -57,15 +64,20 @@ QList<Proyectil*> DoomSlayer::disparar()
 {
     QList<Proyectil*> balas;
 
-    if (cartuchos <= 0) {
+    bool enFuria = ticksFuria > 0;
+
+    if (!enFuria && cartuchos <= 0) {
         return balas;
     }
 
-    cartuchos--;
     ticksDisparo = TICKS_SPRITE_DISPARO;
 
-    if (cartuchos == 0) {
-        esperaRecarga = TICKS_DE_RECARGA;
+    if (!enFuria) {
+        cartuchos--;
+
+        if (cartuchos == 0) {
+            esperaRecarga = TICKS_DE_RECARGA;
+        }
     }
 
     int xBala = (miraHacia > 0) ? x + TAMANO * ESCALA : x - 10;
@@ -101,7 +113,8 @@ QRect DoomSlayer::getRect() const
 
 void DoomSlayer::actualizar()
 {
-    x += velocidadX;
+    int rapidez = (ticksFuria > 0) ? VELOCIDAD_FURIA : VELOCIDAD_NORMAL;
+    x += direccionX * rapidez;
 
     if (ticksDisparo > 0) {
         ticksDisparo--;
@@ -138,6 +151,10 @@ void DoomSlayer::actualizar()
     } else {
         cuadroActual = 0;
         contadorTicks = 0;
+    }
+
+    if (ticksFuria > 0) {
+        ticksFuria--;
     }
 }
 
@@ -177,4 +194,56 @@ void DoomSlayer::setSuelo(int nuevoSuelo)
         enElSuelo = false;
         velocidadY = 0;
     }
+}
+bool DoomSlayer::estaEnElSuelo() const
+{
+    return enElSuelo;
+}
+
+void DoomSlayer::moverX(int cantidad)
+{
+    x += cantidad;
+}
+void DoomSlayer::moverY(int cantidad)
+{
+    y += cantidad;
+}
+
+void DoomSlayer::reaparecer(int nuevaX, int nuevaY)
+{
+    x = nuevaX;
+    y = nuevaY;
+    velocidadY = 0;
+    sueloY = nuevaY;
+    enElSuelo = true;
+}
+
+void DoomSlayer::recogerLlave()
+{
+    llave = true;
+}
+
+bool DoomSlayer::tieneLlave() const
+{
+    return llave;
+}
+
+void DoomSlayer::curar(int cantidad)
+{
+    salud += cantidad;
+    if (salud > 100) {
+        salud = 100;
+    }
+}
+
+void DoomSlayer::activarFuria()
+{
+    ticksFuria = DURACION_FURIA;
+    cartuchos = CARTUCHOS_MAXIMOS;
+    esperaRecarga = 0;
+}
+
+int DoomSlayer::getTicksFuria() const
+{
+    return ticksFuria;
 }
