@@ -15,6 +15,7 @@ public:
 
     void correr(int direccion);
     void saltar();
+    void cortarSalto();
     QList<Proyectil*> disparar();
     void interactuar();
     void actualizar();
@@ -47,6 +48,8 @@ private:
     int ticksInvulnerable;
     bool llave;
     int ticksFuria;
+    int ticksCoyote;
+    int ticksBufer;
 
     QPixmap hoja;
     int cuadroActual;

@@ -4,6 +4,7 @@
         <file>sprite/FondoNivel1.jpg</file>
         <file>sprite/Suelo1.png</file>
         <file>sprite/Suelo2.png</file>
+        <file>sprite/FondoNivel1_1.jpeg</file>
     </qresource>
     <qresource prefix="/"/>
 </RCC>

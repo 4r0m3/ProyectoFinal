@@ -41,4 +41,4 @@ RESOURCES += \
     recursos.qrc
 
 DISTFILES += \
-    ../Momento #2/Sprite's/Movimientos.png
+    ../Momento  #2/Sprite's/Movimientos.png

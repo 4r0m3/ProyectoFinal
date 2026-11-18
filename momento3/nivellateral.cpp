@@ -4,37 +4,45 @@
 #include <QKeyEvent>
 #include <QRandomGenerator>
 
-const int ANCHO_NIVEL = 2400;
-const int Y_SUELO = 400; //altura del suelo
-const int ALTO_SUELO = 100;
-const int SUELO_DOOM = 340;
+const int INICIO_X = 4100;
+const int ANCHO_NIVEL = 10000;
 const int SUELO_ABISMO = 5000;
-const int PROFUNDIDAD_TRINCHERA = 30;
+const int ALTO_DOOM = 60;
+const int ALTO_ENEMIGO_NIVEL = 60;
+const int MARGEN_APOYO = 15;
+const int TOLERANCIA_PARED = 4;
 const int TICKS_ENTRE_DANO = 10;
 const int DANO_ESPINAS = 2;
 const int DANO_CAIDA = 20;
 const int PROBABILIDAD_CURACION = 5;
 //camara
-const int REPETICIONES_FONDO = 4;
+const int ANCHO_FONDO = 800;
+const int REPETICIONES_PRIMER_FONDO = 3;
 const int MARGEN_CAMARA = 350;
 //suelo
 const int ALTO_IMAGEN_SUELO = 100;
 const int ANCHO_SUELO1 = 400;
 const int ANCHO_SUELO2 = 450;
-
+const int DANO_BALA_ENEMIGA = 8;
 
 NivelLateral::NivelLateral(int ancho, int alto)
-    : ancho(ancho),
+    : repeticionesFondo(0),
+    anchoFondo(ANCHO_FONDO),
+    ancho(ancho),
     alto(alto),
     anchoNivel(ANCHO_NIVEL),
-    camaraX(0),
-    repeticionesFondo(REPETICIONES_FONDO),
-    anchoFondo(0)
+    camaraX(0)
 {
+    repeticionesFondo = (anchoNivel + anchoFondo - 1) / anchoFondo;
+
     fondo.load(":/imagenes/sprite/FondoNivel1");
     if (!fondo.isNull()) {
-        anchoFondo = (anchoNivel + repeticionesFondo - 1) / repeticionesFondo;
         fondo = fondo.scaled(anchoFondo, alto, Qt::IgnoreAspectRatio, Qt::FastTransformation);
+    }
+
+    fondo2.load(":/imagenes/sprite/FondoNivel1_1");
+    if (!fondo2.isNull()) {
+        fondo2 = fondo2.scaled(anchoFondo, alto, Qt::IgnoreAspectRatio, Qt::FastTransformation);
     }
 
     suelo1.load(":/imagenes/sprite/Suelo1");
@@ -47,39 +55,47 @@ NivelLateral::NivelLateral(int ancho, int alto)
     if (!suelo2.isNull()) {
         suelo2 = suelo2.scaled(ANCHO_SUELO2, ALTO_IMAGEN_SUELO, Qt::IgnoreAspectRatio, Qt::FastTransformation);
     }
+    //Parte 1 Plataformeo - controles
+    //                    x    ancho   y    espinas
+    tramos.append(Tramo{    0,  450, 400, false });
+    tramos.append(Tramo{  550,  250, 360, false });
+    tramos.append(Tramo{  800,  200, 320, false });
+    tramos.append(Tramo{ 1130,  270, 400, false });
+    tramos.append(Tramo{ 1400,  110, 440, false });
+    tramos.append(Tramo{ 1510,  490, 400, false });
+    tramos.append(Tramo{ 2000,  400, 360, false });
+    tramos.append(Tramo{ 4000,  500, 320, false });
+    tramos.append(Tramo{ 4500,  100, 400, false});
+    plataformas.append(new Plataforma(2500, 330, 100, 10, 80, 0));
+    plataformas.append(new Plataforma(2800, 330, 100, 10, 0, 80, 0.05));
+    plataformas.append(new Plataforma(3000, 310, 100, 10, 0, 30, 0.08));
+    plataformas.append(new Plataforma(3200, 300, 90, 10, 0, 60, 0.08));
+    plataformas.append(new Plataforma(3400, 380, 100, 10, 50, 50, 0.05));
+    plataformas.append(new Plataforma(3600, 360, 100, 10, -50, 50, 0.05));
+    plataformas.append(new Plataforma(3850, 360, 150, 10));
 
-    doom = new DoomSlayer(100, SUELO_DOOM);
-
-    enemigos.append(new Enemigos(400, SUELO_DOOM, 330, 450));
-    enemigos.append(new Enemigos(660, SUELO_DOOM, 640, 690));
-    enemigos.append(new Enemigos(1100, SUELO_DOOM, 1050, 1250));
-    enemigos.append(new Enemigos(1900, SUELO_DOOM, 1850, 2050));
-    enemigos.append(new Enemigos(2150, SUELO_DOOM, 2100, 2250));
-
-    plataformas.append(new Plataforma(150, 350, 120, 15));
-    plataformas.append(new Plataforma(320, 280, 120, 15));
-    plataformas.append(new Plataforma(500, 210, 120, 15));
-    plataformas.append(new Plataforma(640, 300, 110, 15, 50, 0, 0.03));
-    plataformas.append(new Plataforma(10, 330, 80, 15, 0, 50, 0.03));
-    plataformas.append(new Plataforma(850, 320, 120, 15));
-    plataformas.append(new Plataforma(1020, 260, 120, 15));
-    plataformas.append(new Plataforma(1380, 320, 100, 15, 40, 0, 0.03));
-    plataformas.append(new Plataforma(1600, 3320, 100, 15, 0, 40, 0.03));
+    //parte 2 carcel - enemigos
+    tramos.append(Tramo{ 4600,  100, 450, false});
+    tramos.append(Tramo{ 4700,  80,  450, false });
+    tramos.append(Tramo{ 4850,  4000, 450, false});
+    auto enemigoEn = [this](int x, int izq, int der) {
+        enemigos.append(new Enemigos(x, sueloEn(x + 25) - ALTO_ENEMIGO_NIVEL, izq, der));
+    };
+    plataformas.append(new Plataforma(5000, 360, 100, 10));
+    plataformas.append(new Plataforma(5250, 340, 100, 10));
+    plataformas.append(new Plataforma(5550, 320, 100, 10));
+    plataformas.append(new Plataforma(6000, 300, 100, 10));
+    enemigoEn(5000, 4950, 5150);
+    enemigoEn(5400, 5300, 5500);
+    enemigoEn(5800, 5700, 5900);
+    //objetos.append(new Objetos(TipoObjeto::Curacion, 200, 306));    // sobre plataforma (150, 330)
 
 
-    fosas.append(new Fosa(190, Y_SUELO, 110, PROFUNDIDAD_TRINCHERA, TipoFosa::Trinchera));
-    fosas.append(new Fosa(520, Y_SUELO, 100, ALTO_SUELO, TipoFosa::Abismo));
-    fosas.append(new Fosa(1350, Y_SUELO, 110, ALTO_SUELO, TipoFosa::Abismo));
-    fosas.append(new Fosa(1700, Y_SUELO, 110, PROFUNDIDAD_TRINCHERA, TipoFosa::Trinchera));
 
-
-    objetos.append(new Objetos(TipoObjeto::Curacion, 200, 326));
-    objetos.append(new Objetos(TipoObjeto::Furia, 370, 256));
-    objetos.append(new Objetos(TipoObjeto::Llave, 550, 180));
-    objetos.append(new Objetos(TipoObjeto::Furia, 900, 396));
-    objetos.append(new Objetos(TipoObjeto::Curacion, 1060, 236));
-    objetos.append(new Objetos(TipoObjeto::Puerta, ANCHO_NIVEL - 80, Y_SUELO - 80));
-
+    //aparición del personaje
+    seguroX = INICIO_X;
+    seguroY = sueloEn(INICIO_X) - ALTO_DOOM;
+    doom = new DoomSlayer(seguroX, seguroY);
     actualizarCamara();
 }
 
@@ -88,9 +104,17 @@ NivelLateral::~NivelLateral()
     qDeleteAll(proyectiles);
     qDeleteAll(enemigos);
     qDeleteAll(plataformas);
-    qDeleteAll(fosas);
     qDeleteAll(objetos);
+    qDeleteAll(proyectilesEnemigos);
     delete doom;
+}
+
+int NivelLateral::sueloEn(int x) const
+{
+    for (const Tramo &t : tramos) {
+        if (x >= t.x && x < t.x + t.ancho) return t.y;
+    }
+    return SUELO_ABISMO;
 }
 
 void NivelLateral::teclaPresionada(int tecla)
@@ -99,6 +123,10 @@ void NivelLateral::teclaPresionada(int tecla)
 
     teclas.insert(tecla);
     actualizarMovimiento();
+
+    if (tecla == Qt::Key_W) {
+        doom->saltar();
+    }
 
     if (tecla == Qt::Key_Space) {
         proyectiles.append(doom->disparar());
@@ -112,6 +140,11 @@ void NivelLateral::teclaPresionada(int tecla)
 void NivelLateral::teclaSoltada(int tecla)
 {
     teclas.remove(tecla);
+
+    if (tecla == Qt::Key_W) {
+        doom->cortarSalto();
+    }
+
     actualizarMovimiento();
 }
 
@@ -161,40 +194,65 @@ void NivelLateral::actualizarProyectiles()
     }
 }
 
-const Fosa* NivelLateral::buscarFosa(const QRect &cuerpo) const
+bool NivelLateral::tocaSuelo(const QRect &zona) const
 {
-    int centro = cuerpo.center().x();
-
-    for (const Fosa *fosa : fosas) {
-        QRect zona = fosa->getRect();
-        if (centro >= zona.left() && centro <= zona.right()) {
-            return fosa;
+    for (const Tramo &t : tramos) {
+        if (zona.right() > t.x && zona.left() < t.x + t.ancho && zona.bottom() > t.y) {
+            return true;
         }
     }
 
-    return nullptr;
+    return false;
+}
+
+void NivelLateral::actualizarProyectilesEnemigos()
+{
+    for (int i = proyectilesEnemigos.size() - 1; i >= 0; i--) {
+        Proyectil *bala = proyectilesEnemigos[i];
+        bala->actualizar();
+
+        bool fuera = bala->getX() < camaraX - 20 || bala->getX() > camaraX + ancho + 20;
+        bool impacto = false;
+
+        if (!fuera && bala->getRect().intersects(doom->getRect())) {
+            int direccion = (bala->getX() < doom->getX()) ? 1 : -1;
+            doom->golpeado(direccion, DANO_BALA_ENEMIGA);
+            impacto = true;
+        }
+
+        if (fuera || impacto || tocaSuelo(bala->getRect())) {
+            delete bala;
+            proyectilesEnemigos.removeAt(i);
+        }
+    }
 }
 
 void NivelLateral::actualizarSuelo()
 {
     QRect cuerpo = doom->getRect();
     int pies = cuerpo.y() + cuerpo.height();
-    int suelo = SUELO_DOOM;
+    int suelo = SUELO_ABISMO;
     Plataforma *apoyo = nullptr;
+    tramoApoyo = nullptr;
 
-    const Fosa *fosa = buscarFosa(cuerpo);
-    bool enTrinchera = fosa != nullptr && fosa->getTipo() == TipoFosa::Trinchera;
+    for (int i = 0; i < tramos.size(); i++) {
+        const Tramo &t = tramos.at(i);
 
-    if (enTrinchera) {
-        suelo = fosa->getFondo() - cuerpo.height();
-    } else if (fosa != nullptr || pies > Y_SUELO) {
-        suelo = SUELO_ABISMO;
+        bool encima = cuerpo.right() - MARGEN_APOYO > t.x &&
+                      cuerpo.left() + MARGEN_APOYO < t.x + t.ancho;
+
+        if (encima && pies <= t.y) {
+            int sueloTramo = t.y - cuerpo.height();
+            if (sueloTramo < suelo) {
+                suelo = sueloTramo;
+                tramoApoyo = &t;
+            }
+        }
     }
 
     for (Plataforma *plataforma : plataformas) {
         QRect zona = plataforma->getRect();
         int techoAnterior = zona.top() - plataforma->getDesplazamientoY();
-
         bool estaEncima = cuerpo.right() > zona.left() && cuerpo.left() < zona.right();
 
         if (estaEncima && pies <= techoAnterior) {
@@ -202,6 +260,7 @@ void NivelLateral::actualizarSuelo()
             if (sueloPlataforma < suelo) {
                 suelo = sueloPlataforma;
                 apoyo = plataforma;
+                tramoApoyo = nullptr;
             }
         }
     }
@@ -243,34 +302,31 @@ void NivelLateral::limitarEnNivel()
     }
 }
 
-void NivelLateral::limitarEnTrinchera()
+// Si los pies de Doom estan por debajo de la superficie de un tramo
+// y se solapan horizontalmente con el, el tramo actua como pared.
+void NivelLateral::resolverParedes()
 {
     QRect cuerpo = doom->getRect();
     int pies = cuerpo.y() + cuerpo.height();
 
-    if (pies <= Y_SUELO) return;
+    for (int i = 0; i < tramos.size(); i++) {
+        const Tramo &t = tramos.at(i);
 
-    const Fosa *fosa = buscarFosa(cuerpo);
-    if (fosa == nullptr || fosa->getTipo() != TipoFosa::Trinchera) return;
+        if (pies <= t.y + TOLERANCIA_PARED) continue;   // va por encima
+        if (cuerpo.right() < t.x || cuerpo.left() >= t.x + t.ancho) continue;
 
-    QRect zona = fosa->getRect();
-
-    if (cuerpo.left() < zona.left()) {
-        doom->moverX(zona.left() - cuerpo.left());
-    }
-
-    if (cuerpo.right() > zona.right()) {
-        doom->moverX(zona.right() - cuerpo.right());
+        if (cuerpo.center().x() < t.x + t.ancho / 2) {
+            doom->moverX(t.x - 1 - cuerpo.right());
+        } else {
+            doom->moverX(t.x + t.ancho - cuerpo.left());
+        }
+        cuerpo = doom->getRect();
     }
 }
 
 void NivelLateral::aplicarDanoEspinas()
 {
-    QRect cuerpo = doom->getRect();
-    int pies = cuerpo.y() + cuerpo.height();
-
-    const Fosa *fosa = buscarFosa(cuerpo);
-    bool dentro = pies > Y_SUELO && fosa != nullptr && fosa->getTipo() == TipoFosa::Trinchera;
+    bool dentro = tramoApoyo != nullptr && tramoApoyo->espinas && doom->estaEnElSuelo();
 
     if (!dentro) {
         ticksEspinas = 0;
@@ -326,8 +382,6 @@ void NivelLateral::actualizar()
 
     if (ticksMensaje > 0) ticksMensaje--;
 
-    if (teclas.contains(Qt::Key_W)) doom->saltar();
-
     for (Plataforma *plataforma : plataformas) {
         plataforma->actualizar();
     }
@@ -335,21 +389,60 @@ void NivelLateral::actualizar()
     actualizarSuelo();
     doom->actualizar();
     limitarEnNivel();
-    limitarEnTrinchera();
+    resolverParedes();
     aplicarDanoEspinas();
+
+    // checkpoint: ultimo punto seguro (tramo sin espinas, cuerpo completo dentro)
+    if (tramoApoyo != nullptr && !tramoApoyo->espinas && doom->estaEnElSuelo()) {
+        QRect c = doom->getRect();
+        if (c.left() >= tramoApoyo->x && c.right() <= tramoApoyo->x + tramoApoyo->ancho) {
+            seguroX = doom->getX();
+            seguroY = doom->getY();
+        }
+    }
 
     if (doom->getY() > alto) {
         doom->recibirDano(DANO_CAIDA);
-        doom->reaparecer(100, SUELO_DOOM);
+        doom->reaparecer(seguroX, seguroY);
     }
 
     for (Enemigos *enemigo : enemigos) {
         enemigo->actualizar();
+
+        Proyectil *bala = enemigo->disparar(doom->getRect());
+        if (bala != nullptr) {
+            proyectilesEnemigos.append(bala);
+        }
     }
 
     actualizarProyectiles();
+    actualizarProyectilesEnemigos();
     revisarColisiones();
     actualizarCamara();
+}
+
+
+void NivelLateral::dibujarTramo(QPainter &pintor, const Tramo &t)
+{
+    QRect zona(t.x, t.y, t.ancho, alto - t.y);
+
+    pintor.save();
+    pintor.setClipRect(zona);
+
+    if (!suelo1.isNull() && !suelo2.isNull()) {
+        pintor.fillRect(zona, t.espinas ? QColor(120, 30, 30) : QColor(60, 40, 30));
+
+        int indice = 0;
+        for (int px = t.x; px < t.x + t.ancho; indice++) {
+            const QPixmap &img = (indice % 2 == 0) ? suelo1 : suelo2;
+            pintor.drawPixmap(px, t.y, img);
+            px += img.width();
+        }
+    } else {
+        pintor.fillRect(zona, t.espinas ? QColor(120, 30, 30) : QColor(90, 60, 40));
+    }
+
+    pintor.restore();
 }
 
 void NivelLateral::dibujar(QPainter &pintor)
@@ -361,26 +454,29 @@ void NivelLateral::dibujar(QPainter &pintor)
 
     if (!fondo.isNull()) {
         for (int i = 0; i < repeticionesFondo; i++) {
-            pintor.drawPixmap(i * anchoFondo, 0, fondo);
+            if (i < REPETICIONES_PRIMER_FONDO) {
+                pintor.drawPixmap(i * anchoFondo, 0, fondo);
+            } else {
+                pintor.drawPixmap(i * anchoFondo, 0, fondo2);
+            }
         }
     }
 
-    if (!suelo1.isNull() && !suelo2.isNull()) {
-        int posicionX = 0;
-        int indice = 0;
+    // abismos: relleno negro en los huecos entre tramos
+    for (int i = 0; i + 1 < tramos.size(); i++) {
+        const Tramo &a = tramos.at(i);
+        const Tramo &b = tramos.at(i + 1);
+        int finA = a.x + a.ancho;
+        int hueco = b.x - finA;
 
-        while (posicionX < anchoNivel) {
-            const QPixmap &imagen = (indice % 2 == 0) ? suelo1 : suelo2;
-            pintor.drawPixmap(posicionX, Y_SUELO, imagen);
-            posicionX += imagen.width();
-            indice++;
+        if (hueco > 0) {
+            int arriba = qMax(a.y, b.y);
+            pintor.fillRect(finA, arriba, hueco, alto - arriba, QColor(0, 0, 0));
         }
-    } else {
-        pintor.fillRect(0, Y_SUELO, anchoNivel, ALTO_SUELO, QColor(90, 60, 40));
     }
 
-    for (Fosa *fosa : fosas) {
-        fosa->dibujar(pintor);
+    for (int i = 0; i < tramos.size(); i++) {
+        dibujarTramo(pintor, tramos.at(i));
     }
 
     for (Plataforma *plataforma : plataformas) {
@@ -407,12 +503,19 @@ void NivelLateral::dibujar(QPainter &pintor)
         pintor.fillRect(bala->getX(), bala->getY(), 10, 4, QColor(255, 220, 0));
     }
 
+    for (Proyectil *bala : proyectilesEnemigos) {
+        pintor.fillRect(bala->getX(), bala->getY(), 10, 4, QColor(255, 90, 40));
+    }
+
     pintor.restore();
 
     pintor.setPen(Qt::white);
     pintor.drawText(10, 20, QString("Salud: %1").arg(doom->getSalud()));
     pintor.drawText(10, 40, QString("Llave: %1").arg(doom->tieneLlave() ? "Si" : "No"));
     pintor.drawText(10, 60, "E: interactuar");
+    pintor.drawText(10, 80, "W: saltar  , A: izquierda , D: Derecha");
+    pintor.drawText(10, 100, "Espacio: Dispara");
+
 
     if (doom->getTicksFuria() > 0) {
         pintor.setPen(QColor(255, 80, 80));
@@ -432,6 +535,7 @@ void NivelLateral::dibujar(QPainter &pintor)
         pintor.drawText(QRect(0, 0, ancho, alto), Qt::AlignCenter, "Nivel 1 completado");
     }
 }
+
 bool NivelLateral::estaCompleto() const
 {
     return nivelCompleto;

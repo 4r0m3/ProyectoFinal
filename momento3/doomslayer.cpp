@@ -23,10 +23,17 @@ const int DURACION_FURIA = 300;
 const int VELOCIDAD_NORMAL = 5;
 const int VELOCIDAD_FURIA = 8;
 
+// plataformeo
+const int TICKS_COYOTE = 6;        // frames de gracia para saltar tras salir de un borde
+const int TICKS_BUFER_SALTO = 6;   // frames que se recuerda un salto pulsado antes de aterrizar
+const int VELOCIDAD_SALTO = -15;
+const int CORTE_SALTO = -4;        // al soltar W, la velocidad de subida se limita a esto
+
 DoomSlayer::DoomSlayer(int x, int y)
     : Personaje(x, y, 100),
     velocidadX(0),
     velocidadY(0),
+    direccionX(0),
     sueloY(y),
     miraHacia(1),
     enElSuelo(true),
@@ -34,11 +41,12 @@ DoomSlayer::DoomSlayer(int x, int y)
     esperaRecarga(0),
     ticksDisparo(0),
     ticksInvulnerable(0),
-    cuadroActual(0),
-    contadorTicks(0),
     llave(false),
     ticksFuria(0),
-    direccionX(0)
+    ticksCoyote(0),
+    ticksBufer(0),
+    cuadroActual(0),
+    contadorTicks(0)
 {
     hoja.load(":/imagenes/sprite/Movimientos");
 }
@@ -54,9 +62,13 @@ void DoomSlayer::correr(int direccion)
 
 void DoomSlayer::saltar()
 {
-    if (enElSuelo) {
-        velocidadY = -15;
-        enElSuelo = false;
+    ticksBufer = TICKS_BUFER_SALTO;
+}
+
+void DoomSlayer::cortarSalto()
+{
+    if (velocidadY < CORTE_SALTO) {
+        velocidadY = CORTE_SALTO;
     }
 }
 
@@ -104,6 +116,7 @@ void DoomSlayer::golpeado(int direccion, int dano)
     x += direccion * 40;
     velocidadY = -8;
     enElSuelo = false;
+    ticksCoyote = 0;
 }
 
 QRect DoomSlayer::getRect() const
@@ -128,6 +141,23 @@ void DoomSlayer::actualizar()
         esperaRecarga--;
         if (esperaRecarga == 0) {
             cartuchos = CARTUCHOS_MAXIMOS;
+        }
+    }
+
+    // coyote time + salto en buffer
+    if (enElSuelo) {
+        ticksCoyote = TICKS_COYOTE;
+    } else if (ticksCoyote > 0) {
+        ticksCoyote--;
+    }
+
+    if (ticksBufer > 0) {
+        ticksBufer--;
+        if (ticksCoyote > 0) {
+            velocidadY = VELOCIDAD_SALTO;
+            enElSuelo = false;
+            ticksCoyote = 0;
+            ticksBufer = 0;
         }
     }
 
@@ -195,6 +225,7 @@ void DoomSlayer::setSuelo(int nuevoSuelo)
         velocidadY = 0;
     }
 }
+
 bool DoomSlayer::estaEnElSuelo() const
 {
     return enElSuelo;
@@ -204,6 +235,7 @@ void DoomSlayer::moverX(int cantidad)
 {
     x += cantidad;
 }
+
 void DoomSlayer::moverY(int cantidad)
 {
     y += cantidad;
@@ -216,6 +248,7 @@ void DoomSlayer::reaparecer(int nuevaX, int nuevaY)
     velocidadY = 0;
     sueloY = nuevaY;
     enElSuelo = true;
+    ticksBufer = 0;
 }
 
 void DoomSlayer::recogerLlave()

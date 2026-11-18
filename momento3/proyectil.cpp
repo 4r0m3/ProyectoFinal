@@ -1,9 +1,9 @@
 #include "proyectil.h"
 
-Proyectil::Proyectil(int x, int y, int direccion, int velocidadY, int gravedad)
+Proyectil::Proyectil(int x, int y, int direccion, int velocidadY, int gravedad, int rapidez)
     : x(x),
     y(y),
-    velocidadX(direccion * 12),
+    velocidadX(direccion * rapidez),
     velocidadY(velocidadY),
     gravedad(gravedad)
 {

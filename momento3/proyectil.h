@@ -6,7 +6,7 @@
 class Proyectil
 {
 public:
-    Proyectil(int x, int y, int direccion, int velocidadY = 0, int gravedad = 0);
+    Proyectil(int x, int y, int direccion, int velocidadY = 0, int gravedad = 0, int rapidez = 12);
 
     void actualizar();
     bool fueraDePantalla(int anchoPantalla) const;

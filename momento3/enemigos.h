@@ -4,6 +4,7 @@
 #include <QPainter>
 #include <QRect>
 #include "personaje.h"
+#include "proyectil.h"
 
 class Enemigos : public Personaje
 {
@@ -14,11 +15,14 @@ public:
     void actualizar();
     void dibujar(QPainter &pintor);
     QRect getRect() const;
+    Proyectil* disparar(const QRect &objetivo);
 
 private:
     int velocidadX;
     int limiteIzquierdo;
     int limiteDerecho;
+    int miraHacia;
+    int esperaDisparo;
 };
 
 #endif
