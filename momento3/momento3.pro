@@ -9,24 +9,26 @@ CONFIG += c++17
 SOURCES += \
     doomslayer.cpp \
     enemigos.cpp \
-    fosa.cpp \
     main.cpp \
+    menu.cpp \
     nivellateral.cpp \
     objetos.cpp \
     personaje.cpp \
     plataforma.cpp \
     proyectil.cpp \
+    tanque.cpp \
     widget.cpp
 
 HEADERS += \
     doomslayer.h \
     enemigos.h \
-    fosa.h \
+    menu.h \
     nivellateral.h \
     objetos.h \
     personaje.h \
     plataforma.h \
     proyectil.h \
+    tanque.h \
     widget.h
 
 FORMS += \

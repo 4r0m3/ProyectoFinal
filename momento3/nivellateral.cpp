@@ -4,8 +4,8 @@
 #include <QKeyEvent>
 #include <QRandomGenerator>
 
-const int INICIO_X = 4100;
-const int ANCHO_NIVEL = 10000;
+const int INICIO_X = 20;
+const int ANCHO_NIVEL = 11600;
 const int SUELO_ABISMO = 5000;
 const int ALTO_DOOM = 60;
 const int ALTO_ENEMIGO_NIVEL = 60;
@@ -15,15 +15,23 @@ const int TICKS_ENTRE_DANO = 10;
 const int DANO_ESPINAS = 2;
 const int DANO_CAIDA = 20;
 const int PROBABILIDAD_CURACION = 5;
-//camara
 const int ANCHO_FONDO = 800;
 const int REPETICIONES_PRIMER_FONDO = 3;
 const int MARGEN_CAMARA = 350;
-//suelo
 const int ALTO_IMAGEN_SUELO = 100;
 const int ANCHO_SUELO1 = 400;
 const int ANCHO_SUELO2 = 450;
 const int DANO_BALA_ENEMIGA = 8;
+const int SALA_JEFE_X = 9000;
+const int ZONA_JEFE_X = 9080;
+const int ANCHO_ZONA_JEFE = 40;
+const int VELOCIDAD_CAMARA_JEFE = 12;
+const int RADIO_EXPLOSION = 90;
+const int TICKS_EXPLOSION = 20;
+const int DANO_EXPLOSION = 15;
+const int DANO_A_TANQUE = 15;
+const int RADIO_GRANADA = 50;
+const int DANO_GRANADA = 10;
 
 NivelLateral::NivelLateral(int ancho, int alto)
     : repeticionesFondo(0),
@@ -55,8 +63,7 @@ NivelLateral::NivelLateral(int ancho, int alto)
     if (!suelo2.isNull()) {
         suelo2 = suelo2.scaled(ANCHO_SUELO2, ALTO_IMAGEN_SUELO, Qt::IgnoreAspectRatio, Qt::FastTransformation);
     }
-    //Parte 1 Plataformeo - controles
-    //                    x    ancho   y    espinas
+
     tramos.append(Tramo{    0,  450, 400, false });
     tramos.append(Tramo{  550,  250, 360, false });
     tramos.append(Tramo{  800,  200, 320, false });
@@ -64,8 +71,9 @@ NivelLateral::NivelLateral(int ancho, int alto)
     tramos.append(Tramo{ 1400,  110, 440, false });
     tramos.append(Tramo{ 1510,  490, 400, false });
     tramos.append(Tramo{ 2000,  400, 360, false });
-    tramos.append(Tramo{ 4000,  500, 320, false });
-    tramos.append(Tramo{ 4500,  100, 400, false});
+    tramos.append(Tramo{ 4100,  300, 360, false });
+    tramos.append(Tramo{ 5600,  500, 320, false });
+    tramos.append(Tramo{ 6100,  100, 400, false });
     plataformas.append(new Plataforma(2500, 330, 100, 10, 80, 0));
     plataformas.append(new Plataforma(2800, 330, 100, 10, 0, 80, 0.05));
     plataformas.append(new Plataforma(3000, 310, 100, 10, 0, 30, 0.08));
@@ -73,26 +81,75 @@ NivelLateral::NivelLateral(int ancho, int alto)
     plataformas.append(new Plataforma(3400, 380, 100, 10, 50, 50, 0.05));
     plataformas.append(new Plataforma(3600, 360, 100, 10, -50, 50, 0.05));
     plataformas.append(new Plataforma(3850, 360, 150, 10));
+    plataformas.append(new Plataforma(4550, 330, 100, 10, 80, 0));
+    plataformas.append(new Plataforma(4850, 340, 100, 10, 0, 70, 0.05));
+    plataformas.append(new Plataforma(5050, 300, 100, 10, 0, 40, 0.08));
+    plataformas.append(new Plataforma(5250, 350, 100, 10, 60, 0, 0.05));
+    plataformas.append(new Plataforma(5450, 360, 150, 10));
 
-    //parte 2 carcel - enemigos
-    tramos.append(Tramo{ 4600,  100, 450, false});
-    tramos.append(Tramo{ 4700,  80,  450, false });
-    tramos.append(Tramo{ 4850,  4000, 450, false});
+    tramos.append(Tramo{ 6200,  100, 450, false });
+    tramos.append(Tramo{ 6300,  80,  450, false });
+    tramos.append(Tramo{ 6450,  4000, 450, false });
     auto enemigoEn = [this](int x, int izq, int der) {
         enemigos.append(new Enemigos(x, sueloEn(x + 25) - ALTO_ENEMIGO_NIVEL, izq, der));
     };
-    plataformas.append(new Plataforma(5000, 360, 100, 10));
-    plataformas.append(new Plataforma(5250, 340, 100, 10));
-    plataformas.append(new Plataforma(5550, 320, 100, 10));
-    plataformas.append(new Plataforma(6000, 300, 100, 10));
-    enemigoEn(5000, 4950, 5150);
-    enemigoEn(5400, 5300, 5500);
-    enemigoEn(5800, 5700, 5900);
-    //objetos.append(new Objetos(TipoObjeto::Curacion, 200, 306));    // sobre plataforma (150, 330)
+    auto enemigoSobrePlataforma = [this](int x, int y, int izq, int der) {
+        enemigos.append(new Enemigos(x, y - ALTO_ENEMIGO_NIVEL, izq, der));
+    };
+    auto granaderoSobrePlataforma = [this](int x, int y, int izq, int der) {
+        enemigos.append(new Enemigos(x, y - ALTO_ENEMIGO_NIVEL, izq, der, true));
+    };
+    plataformas.append(new Plataforma(6600, 360, 100, 10));
+    plataformas.append(new Plataforma(6850, 340, 100, 10));
+    plataformas.append(new Plataforma(7150, 320, 100, 10));
+    plataformas.append(new Plataforma(7600, 300, 100, 10));
+    enemigoEn(6600, 6550, 6750);
+    enemigoEn(7000, 6900, 7100);
+    enemigoEn(7400, 7300, 7500);
+
+    plataformas.append(new Plataforma(7750, 370, 160, 10));
+    plataformas.append(new Plataforma(8050, 330, 160, 10));
+    plataformas.append(new Plataforma(8350, 370, 160, 10));
+    plataformas.append(new Plataforma(8650, 330, 160, 10));
+    enemigoSobrePlataforma(7770, 370, 7750, 7860);
+    granaderoSobrePlataforma(8070, 330, 8050, 8160);
+    enemigoSobrePlataforma(8370, 370, 8350, 8460);
+    granaderoSobrePlataforma(8670, 330, 8650, 8760);
+    objetos.append(new Objetos(TipoObjeto::Curacion, 8720, 306));
+
+    plataformas.append(new Plataforma(2440, 290, 70, 10));
+    plataformas.append(new Plataforma(2580, 240, 70, 10));
+    plataformas.append(new Plataforma(2740, 190, 70, 10));
+    plataformas.append(new Plataforma(2900, 240, 70, 10));
+    plataformas.append(new Plataforma(3050, 190, 160, 10));
+    plataformas.append(new Plataforma(3290, 240, 70, 10));
+    plataformas.append(new Plataforma(3430, 190, 70, 10));
+    plataformas.append(new Plataforma(3570, 150, 70, 10));
+    plataformas.append(new Plataforma(3710, 200, 70, 10));
+    plataformas.append(new Plataforma(3850, 250, 70, 10));
+    enemigoSobrePlataforma(3070, 190, 3050, 3160);
+    objetos.append(new Objetos(TipoObjeto::Curacion, 3725, 176));
+
+    plataformas.append(new Plataforma(4450, 280, 70, 10));
+    plataformas.append(new Plataforma(4590, 230, 70, 10));
+    plataformas.append(new Plataforma(4730, 180, 160, 10));
+    plataformas.append(new Plataforma(4970, 230, 70, 10));
+    plataformas.append(new Plataforma(5110, 180, 70, 10));
+    plataformas.append(new Plataforma(5250, 220, 70, 10));
+    plataformas.append(new Plataforma(5390, 270, 70, 10));
+    granaderoSobrePlataforma(4750, 180, 4730, 4840);
+    objetos.append(new Objetos(TipoObjeto::Curacion, 5405, 246));
 
 
-
-    //aparición del personaje
+    //zona jefe
+    plataformas.append(new Plataforma(9150, 350, 80, 10));
+    plataformas.append(new Plataforma(9150, 250, 80, 10));
+    plataformas.append(new Plataforma(9350, 350, 80, 10));
+    plataformas.append(new Plataforma(9350, 250, 80, 10));
+    plataformas.append(new Plataforma(9550, 350, 80, 10));
+    plataformas.append(new Plataforma(9550, 250, 80, 10));
+    objetos.append(new Objetos(TipoObjeto::ZonaJefe, ZONA_JEFE_X, 0, ANCHO_ZONA_JEFE, alto));
+    objetos.append(new Objetos(TipoObjeto::Puerta, 10300, 360, 20, 30));
     seguroX = INICIO_X;
     seguroY = sueloEn(INICIO_X) - ALTO_DOOM;
     doom = new DoomSlayer(seguroX, seguroY);
@@ -106,6 +163,9 @@ NivelLateral::~NivelLateral()
     qDeleteAll(plataformas);
     qDeleteAll(objetos);
     qDeleteAll(proyectilesEnemigos);
+    qDeleteAll(bombas);
+    qDeleteAll(granadas);
+    delete tanque;
     delete doom;
 }
 
@@ -159,6 +219,10 @@ void NivelLateral::actualizarMovimiento()
 void NivelLateral::interactuar()
 {
     for (int i = objetos.size() - 1; i >= 0; i--) {
+        if (objetos[i]->getTipo() == TipoObjeto::ZonaJefe) {
+            continue;
+        }
+
         if (!doom->getRect().intersects(objetos[i]->getRect())) {
             continue;
         }
@@ -273,8 +337,55 @@ void NivelLateral::actualizarSuelo()
     doom->setSuelo(suelo);
 }
 
+void NivelLateral::actualizarZonasJefe()
+{
+    if (camaraJefe) return;
+
+
+
+    for (Objetos *objeto : objetos) {
+        if (objeto->detectarContacto(doom->getRect())) {
+            camaraJefe = true;
+            camaraJefeX = SALA_JEFE_X;
+
+            int xTanque = SALA_JEFE_X + ancho - 200;
+            int yTanque = sueloEn(xTanque) - ALTO_TANQUE;
+            int izquierda = SALA_JEFE_X + 20;
+            int derecha = SALA_JEFE_X + ancho - ANCHO_TANQUE - 20;
+            tanque = new Tanque(xTanque, yTanque, izquierda, derecha);
+            break;
+        }
+    }
+}
+
+void NivelLateral::limitarEnSala()
+{
+    if (!camaraJefe) return;
+
+    QRect cuerpo = doom->getRect();
+    int izquierda = camaraJefeX;
+    int derecha = camaraJefeX + ancho;
+
+    if (cuerpo.left() < izquierda) {
+        doom->moverX(izquierda - cuerpo.left());
+    }
+
+    if (cuerpo.right() > derecha - 1) {
+        doom->moverX(derecha - 1 - cuerpo.right());
+    }
+}
+
 void NivelLateral::actualizarCamara()
 {
+    if (camaraJefe) {
+        if (camaraX < camaraJefeX) {
+            camaraX = qMin(camaraX + VELOCIDAD_CAMARA_JEFE, camaraJefeX);
+        } else if (camaraX > camaraJefeX) {
+            camaraX = qMax(camaraX - VELOCIDAD_CAMARA_JEFE, camaraJefeX);
+        }
+        return;
+    }
+
     QRect cuerpo = doom->getRect();
 
     if (cuerpo.right() - camaraX > ancho - MARGEN_CAMARA) {
@@ -302,8 +413,6 @@ void NivelLateral::limitarEnNivel()
     }
 }
 
-// Si los pies de Doom estan por debajo de la superficie de un tramo
-// y se solapan horizontalmente con el, el tramo actua como pared.
 void NivelLateral::resolverParedes()
 {
     QRect cuerpo = doom->getRect();
@@ -312,7 +421,7 @@ void NivelLateral::resolverParedes()
     for (int i = 0; i < tramos.size(); i++) {
         const Tramo &t = tramos.at(i);
 
-        if (pies <= t.y + TOLERANCIA_PARED) continue;   // va por encima
+        if (pies <= t.y + TOLERANCIA_PARED) continue;
         if (cuerpo.right() < t.x || cuerpo.left() >= t.x + t.ancho) continue;
 
         if (cuerpo.center().x() < t.x + t.ancho / 2) {
@@ -376,6 +485,116 @@ void NivelLateral::revisarColisiones()
     }
 }
 
+void NivelLateral::actualizarTanque()
+{
+    if (tanque == nullptr) {
+        return;
+    }
+
+    Proyectil *bomba = tanque->actualizar(doom->getRect());
+    if (bomba != nullptr) {
+        bombas.append(bomba);
+    }
+
+    Proyectil *bala = tanque->tomarBala();
+    if (bala != nullptr) {
+        proyectilesEnemigos.append(bala);
+    }
+}
+
+void NivelLateral::crearExplosion(int x, int y, int radio, int dano)
+{
+    Explosion e;
+    e.x = x;
+    e.y = y;
+    e.radio = radio;
+    e.ticks = TICKS_EXPLOSION;
+    explosiones.append(e);
+
+    QPoint centro = doom->getRect().center();
+    int dx = centro.x() - x;
+    int dy = centro.y() - y;
+
+    if (dx * dx + dy * dy <= radio * radio) {
+        int direccion = (dx >= 0) ? 1 : -1;
+        doom->golpeado(direccion, dano);
+    }
+}
+
+void NivelLateral::moverParabolicos(QList<Proyectil*> &lista, int radio, int dano)
+{
+    for (int i = lista.size() - 1; i >= 0; i--) {
+        Proyectil *bomba = lista[i];
+        bomba->actualizar();
+
+        bool explota = false;
+
+        if (tocaSuelo(bomba->getRect())) {
+            explota = true;
+        }
+
+        if (bomba->getRect().intersects(doom->getRect())) {
+            explota = true;
+        }
+
+        for (Plataforma *plataforma : plataformas) {
+            if (bomba->getRect().intersects(plataforma->getRect())) {
+                explota = true;
+            }
+        }
+
+        if (explota) {
+            crearExplosion(bomba->getX(), bomba->getY(), radio, dano);
+            delete bomba;
+            lista.removeAt(i);
+        } else if (bomba->getY() > alto + 200) {
+            delete bomba;
+            lista.removeAt(i);
+        }
+    }
+}
+
+void NivelLateral::actualizarBombas()
+{
+    moverParabolicos(bombas, RADIO_EXPLOSION, DANO_EXPLOSION);
+    moverParabolicos(granadas, RADIO_GRANADA, DANO_GRANADA);
+
+    for (int i = explosiones.size() - 1; i >= 0; i--) {
+        explosiones[i].ticks--;
+        if (explosiones[i].ticks <= 0) {
+            explosiones.removeAt(i);
+        }
+    }
+}
+
+void NivelLateral::revisarTanque()
+{
+    if (tanque == nullptr) {
+        return;
+    }
+
+    for (int i = proyectiles.size() - 1; i >= 0; i--) {
+        if (proyectiles[i]->getRect().intersects(tanque->getRect())) {
+            tanque->recibirDano(DANO_A_TANQUE);
+            delete proyectiles[i];
+            proyectiles.removeAt(i);
+        }
+    }
+
+    if (doom->getRect().intersects(tanque->getRect())) {
+        int direccion = (doom->getX() < tanque->getX()) ? -1 : 1;
+        doom->golpeado(direccion, 10);
+    }
+
+    if (tanque->getSalud() <= 0) {
+        QRect zona = tanque->getRect();
+        objetos.append(new Objetos(TipoObjeto::Llave, zona.center().x(), zona.y() + zona.height() - 20));
+        delete tanque;
+        tanque = nullptr;
+        camaraJefe = false;
+    }
+}
+
 void NivelLateral::actualizar()
 {
     if (nivelCompleto) return;
@@ -389,10 +608,11 @@ void NivelLateral::actualizar()
     actualizarSuelo();
     doom->actualizar();
     limitarEnNivel();
+    actualizarZonasJefe();
+    limitarEnSala();
     resolverParedes();
     aplicarDanoEspinas();
 
-    // checkpoint: ultimo punto seguro (tramo sin espinas, cuerpo completo dentro)
     if (tramoApoyo != nullptr && !tramoApoyo->espinas && doom->estaEnElSuelo()) {
         QRect c = doom->getRect();
         if (c.left() >= tramoApoyo->x && c.right() <= tramoApoyo->x + tramoApoyo->ancho) {
@@ -413,14 +633,22 @@ void NivelLateral::actualizar()
         if (bala != nullptr) {
             proyectilesEnemigos.append(bala);
         }
+
+        Proyectil *granada = enemigo->lanzarGranada(doom->getRect());
+        if (granada != nullptr) {
+            granadas.append(granada);
+        }
     }
+
+    actualizarTanque();
+    actualizarBombas();
+    revisarTanque();
 
     actualizarProyectiles();
     actualizarProyectilesEnemigos();
     revisarColisiones();
     actualizarCamara();
 }
-
 
 void NivelLateral::dibujarTramo(QPainter &pintor, const Tramo &t)
 {
@@ -462,7 +690,6 @@ void NivelLateral::dibujar(QPainter &pintor)
         }
     }
 
-    // abismos: relleno negro en los huecos entre tramos
     for (int i = 0; i + 1 < tramos.size(); i++) {
         const Tramo &a = tramos.at(i);
         const Tramo &b = tramos.at(i + 1);
@@ -499,6 +726,10 @@ void NivelLateral::dibujar(QPainter &pintor)
         enemigo->dibujar(pintor);
     }
 
+    if (tanque != nullptr) {
+        tanque->dibujar(pintor);
+    }
+
     for (Proyectil *bala : proyectiles) {
         pintor.fillRect(bala->getX(), bala->getY(), 10, 4, QColor(255, 220, 0));
     }
@@ -507,7 +738,31 @@ void NivelLateral::dibujar(QPainter &pintor)
         pintor.fillRect(bala->getX(), bala->getY(), 10, 4, QColor(255, 90, 40));
     }
 
+    for (Proyectil *bomba : bombas) {
+        pintor.setPen(Qt::NoPen);
+        pintor.setBrush(QColor(255, 200, 0));
+        pintor.drawEllipse(bomba->getX(), bomba->getY(), 10, 10);
+    }
+
+    for (Proyectil *granada : granadas) {
+        pintor.setPen(Qt::NoPen);
+        pintor.setBrush(QColor(120, 220, 60));
+        pintor.drawEllipse(granada->getX(), granada->getY(), 8, 8);
+    }
+
+    for (int i = 0; i < explosiones.size(); i++) {
+        pintor.setPen(Qt::NoPen);
+        pintor.setBrush(QColor(255, 140, 0, 130));
+        pintor.drawEllipse(QPoint(explosiones[i].x, explosiones[i].y), explosiones[i].radio, explosiones[i].radio);
+    }
+
     pintor.restore();
+
+    if (tanque != nullptr) {
+        pintor.fillRect(250, 20, 300, 12, QColor(60, 0, 0));
+        int largo = 300 * tanque->getSalud() / SALUD_TANQUE;
+        pintor.fillRect(250, 20, largo, 12, QColor(220, 30, 30));
+    }
 
     pintor.setPen(Qt::white);
     pintor.drawText(10, 20, QString("Salud: %1").arg(doom->getSalud()));
@@ -515,7 +770,6 @@ void NivelLateral::dibujar(QPainter &pintor)
     pintor.drawText(10, 60, "E: interactuar");
     pintor.drawText(10, 80, "W: saltar  , A: izquierda , D: Derecha");
     pintor.drawText(10, 100, "Espacio: Dispara");
-
 
     if (doom->getTicksFuria() > 0) {
         pintor.setPen(QColor(255, 80, 80));

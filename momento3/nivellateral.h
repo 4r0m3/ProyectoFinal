@@ -12,14 +12,20 @@
 #include "enemigos.h"
 #include "plataforma.h"
 #include "objetos.h"
+#include "tanque.h"
 
-// Un tramo de suelo: una franja horizontal con su propia altura.
-// Los huecos entre tramos son abismos.
 struct Tramo {
-    int x;          // inicio
+    int x;
     int ancho;
-    int y;          // altura de la superficie
-    bool espinas;   // true = hace dano mientras Doom esta encima
+    int y;
+    bool espinas;
+};
+
+struct Explosion {
+    int x;
+    int y;
+    int radio;
+    int ticks;
 };
 
 class NivelLateral
@@ -48,6 +54,13 @@ private:
     int sueloEn(int x) const;
     void actualizarProyectilesEnemigos();
     bool tocaSuelo(const QRect &zona) const;
+    void actualizarZonasJefe();
+    void limitarEnSala();
+    void actualizarTanque();
+    void actualizarBombas();
+    void crearExplosion(int x, int y, int radio, int dano);
+    void moverParabolicos(QList<Proyectil*> &lista, int radio, int dano);
+    void revisarTanque();
 
     QPixmap fondo;
     QPixmap fondo2;
@@ -60,6 +73,8 @@ private:
     int alto;
     int anchoNivel;
     int camaraX;
+    bool camaraJefe = false;
+    int camaraJefeX = 0;
     DoomSlayer *doom;
     QList<Proyectil*> proyectiles;
     QList<Proyectil*> proyectilesEnemigos;
@@ -75,6 +90,11 @@ private:
     bool nivelCompleto = false;
     QString mensaje;
     int ticksMensaje = 0;
+
+    Tanque *tanque = nullptr;
+    QList<Proyectil*> bombas;
+    QList<Proyectil*> granadas;
+    QList<Explosion> explosiones;
 };
 
 #endif

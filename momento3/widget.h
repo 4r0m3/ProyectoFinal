@@ -4,11 +4,12 @@
 #include <QWidget>
 #include <QTimer>
 #include <QKeyEvent>
-#include <QPaintEvent>
-#include "nivellateral.h"
+#include "menu.h"
 
 QT_BEGIN_NAMESPACE
-namespace Ui { class Widget; }
+namespace Ui {
+class Widget;
+}
 QT_END_NAMESPACE
 
 class Widget : public QWidget
@@ -29,8 +30,8 @@ private slots:
 
 private:
     Ui::Widget *ui;
+    Menu *menu;
     QTimer *temporizador;
-    NivelLateral *nivel;
 };
 
 #endif

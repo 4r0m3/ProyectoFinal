@@ -9,34 +9,41 @@ Widget::Widget(QWidget *parent)
     resize(800, 500);
     setFocusPolicy(Qt::StrongFocus);
 
-    nivel = new NivelLateral(800, 500);
+    menu = new Menu(800, 500);
 
     temporizador = new QTimer(this);
+    temporizador->setTimerType(Qt::PreciseTimer);
     connect(temporizador, &QTimer::timeout, this, &Widget::actualizarJuego);
     temporizador->start(16);
 }
 
 Widget::~Widget()
 {
-    delete nivel;
+    delete menu;
     delete ui;
 }
 
 void Widget::keyPressEvent(QKeyEvent *evento)
 {
     if (evento->isAutoRepeat()) return;
-    nivel->teclaPresionada(evento->key());
+    menu->teclaPresionada(evento->key());
 }
 
 void Widget::keyReleaseEvent(QKeyEvent *evento)
 {
     if (evento->isAutoRepeat()) return;
-    nivel->teclaSoltada(evento->key());
+    menu->teclaSoltada(evento->key());
 }
 
 void Widget::actualizarJuego()
 {
-    nivel->actualizar();
+    menu->actualizar();
+
+    if (menu->quiereSalir()) {
+        close();
+        return;
+    }
+
     update();
 }
 
@@ -44,5 +51,5 @@ void Widget::paintEvent(QPaintEvent *evento)
 {
     Q_UNUSED(evento);
     QPainter pintor(this);
-    nivel->dibujar(pintor);
+    menu->dibujar(pintor);
 }
