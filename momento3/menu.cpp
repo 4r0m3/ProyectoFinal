@@ -1,6 +1,7 @@
 #include "menu.h"
 #include "nivellateral.h"
 #include "nivelaereo.h"
+#include <QUrl>
 
 const int EN_MENU = 0;
 const int JUGANDO = 1;
@@ -42,7 +43,7 @@ Menu::Menu(int ancho, int alto)
     seleccion(0),
     salir(false),
     nivelActual(nullptr),
-    nivel2Desbloqueado(true),
+    nivel2Desbloqueado(false),
     nivelJugando(0),
     paginaCinematica(0),
     opacidadCinematica(0.0),
@@ -52,6 +53,9 @@ Menu::Menu(int ancho, int alto)
     opciones.append("Nivel 2");
     opciones.append("Controles");
     opciones.append("Salir");
+
+    sonidoTransicion.setSource(QUrl("qrc:/Sonido/sonidos/sound-transicion.wav"));
+    sonidoTransicion.setVolume(0.5);
 }
 
 Menu::~Menu()
@@ -85,6 +89,7 @@ void Menu::teclaPresionada(int tecla)
                     paginaCinematica = 0;
                     opacidadCinematica = 0.0;
                     nivelPendiente = 0;
+                    sonidoTransicion.play();
                 }
             }
             return;
@@ -128,6 +133,8 @@ void Menu::teclaPresionada(int tecla)
                 } else {
                     iniciarNivel(nivelPendiente);
                 }
+            } else if (avanzar) {
+                sonidoTransicion.play();
             }
         }
         return;
@@ -210,6 +217,7 @@ void Menu::elegirOpcion()
         paginaCinematica = 0;
         opacidadCinematica = 0.0;
         nivelPendiente = 1;
+        sonidoTransicion.play();
     } else if (seleccion == 1) { // Nivel 2
         // Solo entra si está desbloqueado
         if (nivel2Desbloqueado) {
@@ -218,6 +226,7 @@ void Menu::elegirOpcion()
             paginaCinematica = 0;
             opacidadCinematica = 0.0;
             nivelPendiente = 2;
+            sonidoTransicion.play();
         }
     } else if (seleccion == 2) {
         estado = VIENDO_CONTROLES;

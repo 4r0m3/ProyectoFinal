@@ -7,12 +7,24 @@
         <file>sprite/FondoNivel1_1.jpeg</file>
         <file>sprite/Tanque.png</file>
         <file>sprite/Policias.png</file>
-        <file>sprite/FondoNivelAereo(1).png</file>
         <file>sprite/PoliciaNivelAereo.png</file>
         <file>sprite/PoliciaAlterado.png</file>
         <file>sprite/PoliciaBusqueda.png</file>
         <file>sprite/Pasillos.png</file>
         <file>sprite/Personaje.png</file>
+        <file>sprite/sangre-fondo.png</file>
     </qresource>
     <qresource prefix="/"/>
+    <qresource prefix="/Sonido">
+        <file>sonidos/sound-enemy-alert.wav</file>
+        <file>sonidos/sound-enemy-dead.wav</file>
+        <file>sonidos/sound-gun-shot.wav</file>
+        <file>sonidos/sound-open-door.wav</file>
+        <file>sonidos/sound-respaw.wav</file>
+        <file>sonidos/sound-winner.wav</file>
+        <file>sonidos/sound-background.wav</file>
+        <file>sonidos/sound-collet.wav</file>
+        <file>sonidos/sound-explocion.wav</file>
+        <file>sonidos/sound-transicion.wav</file>
+    </qresource>
 </RCC>

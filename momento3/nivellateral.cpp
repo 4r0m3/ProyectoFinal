@@ -3,6 +3,7 @@
 #include <QPen>
 #include <QKeyEvent>
 #include <QRandomGenerator>
+#include <QUrl>
 
 const int INICIO_X = 100;
 const int ANCHO_NIVEL = 11600;
@@ -63,6 +64,22 @@ NivelLateral::NivelLateral(int ancho, int alto)
     if (!suelo2.isNull()) {
         suelo2 = suelo2.scaled(ANCHO_SUELO2, ALTO_IMAGEN_SUELO, Qt::IgnoreAspectRatio, Qt::FastTransformation);
     }
+
+    sonidoDisparoJugador.setSource(QUrl("qrc:/Sonido/sonidos/sound-gun-shot.wav"));
+    sonidoDisparoJugador.setVolume(0.6);
+
+    sonidoDisparoEnemigo.setSource(QUrl("qrc:/Sonido/sonidos/sound-gun-shot.wav"));
+    sonidoDisparoEnemigo.setVolume(0.3);
+
+    sonidoRafagaTanque.setSource(QUrl("qrc:/Sonido/sonidos/sound-gun-shot.wav"));
+    sonidoRafagaTanque.setVolume(0.15);
+    sonidoRafagaTanque.setLoopCount(3);
+
+    sonidoRecoleccion.setSource(QUrl("qrc:/Sonido/sonidos/sound-collet.wav"));
+    sonidoRecoleccion.setVolume(0.6);
+
+    sonidoExplosion.setSource(QUrl("qrc:/Sonido/sonidos/sound-explocion.wav"));
+    sonidoExplosion.setVolume(0.75);
 
     tramos.append(Tramo{    0,  450, 400, false });
     tramos.append(Tramo{  550,  250, 360, false });
@@ -214,7 +231,11 @@ void NivelLateral::teclaPresionada(int tecla)
     }
 
     if (tecla == Qt::Key_Space) {
-        proyectiles.append(doom->disparar());
+        QList<Proyectil*> nuevasBalas = doom->disparar();
+        if (!nuevasBalas.isEmpty()) {
+            proyectiles.append(nuevasBalas);
+            sonidoDisparoJugador.play();
+        }
     }
 
     if (tecla == Qt::Key_E) {
@@ -262,6 +283,7 @@ void NivelLateral::interactuar()
                 ticksMensaje = 120;
             }
         } else if (exito) {
+            sonidoRecoleccion.play();
             delete objetos[i];
             objetos.removeAt(i);
         }
@@ -522,11 +544,14 @@ void NivelLateral::actualizarTanque()
     Proyectil *bala = tanque->tomarBala();
     if (bala != nullptr) {
         proyectilesEnemigos.append(bala);
+        sonidoRafagaTanque.play();
     }
 }
 
 void NivelLateral::crearExplosion(int x, int y, int radio, int dano)
 {
+    sonidoExplosion.play();
+
     Explosion e;
     e.x = x;
     e.y = y;
@@ -660,16 +685,19 @@ void NivelLateral::actualizar()
         Proyectil *bala = enemigo->disparar(doom->getRect());
         if (bala != nullptr) {
             proyectilesEnemigos.append(bala);
+            sonidoDisparoEnemigo.play();
         }
 
         Proyectil *granada = enemigo->lanzarGranada(doom->getRect());
         if (granada != nullptr) {
             granadas.append(granada);
+            sonidoDisparoEnemigo.play();
         }
 
         Proyectil *granadaLista = enemigo->tomarGranada();
         if (granadaLista != nullptr) {
             granadas.append(granadaLista);
+            sonidoDisparoEnemigo.play();
         }
     }
 

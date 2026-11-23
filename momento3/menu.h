@@ -3,6 +3,7 @@
 
 #include <QPainter>
 #include <QStringList>
+#include <QSoundEffect>
 #include "nivel.h"
 
 class Menu
@@ -44,6 +45,8 @@ private:
     int paginaCinematica;
     double opacidadCinematica;
     int nivelPendiente;
+
+    QSoundEffect sonidoTransicion;
 };
 
 #endif

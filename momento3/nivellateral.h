@@ -7,6 +7,7 @@
 #include <QRect>
 #include <QString>
 #include <QPainter>
+#include <QSoundEffect>
 #include "doomslayer.h"
 #include "proyectil.h"
 #include "enemigos.h"
@@ -103,6 +104,12 @@ private:
     QList<Proyectil*> bombas;
     QList<Proyectil*> granadas;
     QList<Explosion> explosiones;
+
+    QSoundEffect sonidoDisparoJugador;
+    QSoundEffect sonidoDisparoEnemigo;
+    QSoundEffect sonidoRafagaTanque;
+    QSoundEffect sonidoRecoleccion;
+    QSoundEffect sonidoExplosion;
 };
 
 #endif

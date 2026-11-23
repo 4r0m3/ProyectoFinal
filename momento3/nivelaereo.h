@@ -8,6 +8,7 @@
 #include <QPainter>
 #include <QPixmap>
 #include <QTransform>
+#include <QSoundEffect>
 #include "nivel.h"
 
 struct EnemigoAereo {
@@ -114,6 +115,18 @@ private:
     QPixmap texPoliciaAlterado;
     QPixmap texPoliciaBusqueda;
     QPixmap texJugador;
+    QPixmap texSangre;
+    QList<QPoint> manchas;
+    QSoundEffect sonidoDisparo;
+    QSoundEffect sonidoDisparoEnemigo;
+    QSoundEffect sonidoRespawn;
+    QSoundEffect sonidoAlerta;
+    QSoundEffect sonidoVictoria;
+    QSoundEffect sonidoMuerte;
+    QSoundEffect sonidoPuerta;
+    QSoundEffect SonidoFondo;
+    QSoundEffect sonidoRecoger;
+
 
     double escalaPolicia;
     double escalaPoliciaAlterado;

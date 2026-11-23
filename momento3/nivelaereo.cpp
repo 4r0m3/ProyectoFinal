@@ -35,6 +35,9 @@ const int BUSCAR = 3;
 
 const int CURACION = 30;
 
+const int TAM_SANGRE = 50;
+const int MAX_MANCHAS = 80;
+
 const char *MAPA[FILAS] = {
     "#######################################",
     "#P..#.......#..E....#.....#.....#.....#",
@@ -105,6 +108,28 @@ NivelAereo::NivelAereo(int ancho, int alto)
     texPoliciaAlterado = QPixmap(":/imagenes/sprite/PoliciaAlterado.png");
     texPoliciaBusqueda = QPixmap(":/imagenes/sprite/PoliciaBusqueda.png");
     texJugador = QPixmap(":/imagenes/sprite/Personaje.png");
+
+    texSangre = QPixmap(":/imagenes/sprite/sangre-fondo.png");
+    if (!texSangre.isNull()) {
+        texSangre = texSangre.scaled(TAM_SANGRE, TAM_SANGRE, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    }
+
+    sonidoDisparo.setSource(QUrl("qrc:/Sonido/sonidos/sound-gun-shot.wav"));
+    sonidoDisparo.setVolume(0.6);
+    sonidoDisparoEnemigo.setSource(QUrl("qrc:/Sonido/sonidos/sound-gun-shot.wav"));
+    sonidoDisparoEnemigo.setVolume(0.3);
+    sonidoRespawn.setSource(QUrl("qrc:/Sonido/sonidos/sound-respaw.wav"));
+    sonidoAlerta.setSource(QUrl("qrc:/Sonido/sonidos/sound-enemy-alert.wav"));
+    sonidoVictoria.setSource(QUrl("qrc:/Sonido/sonidos/sound-winner.wav"));
+    sonidoMuerte.setSource(QUrl("qrc:/Sonido/sonidos/sound-enemy-dead.wav"));
+    sonidoPuerta.setSource(QUrl("qrc:/Sonido/sonidos/sound-open-door.wav"));
+    sonidoRecoger.setSource(QUrl("qrc:/Sonido/sonidos/sound-collet.wav"));
+    sonidoRecoger.setVolume(0.6);
+
+    SonidoFondo.setSource(QUrl("qrc:/Sonido/sonidos/sound-background.wav"));
+    SonidoFondo.setVolume(0.35);
+    SonidoFondo.setLoopCount(QSoundEffect::Infinite);
+    SonidoFondo.play();
 
     for (int fila = 0; fila < FILAS; fila++) {
         QString linea = MAPA[fila];
@@ -207,6 +232,7 @@ void NivelAereo::abrirPuertas(double x, double y, int tam)
                     llaves--;
                     mapa[fila][columna] = '.';
                     mostrarMensaje("Puerta abierta");
+                    sonidoPuerta.play();
                 } else {
                     mostrarMensaje("Necesitas una llave");
                 }
@@ -240,15 +266,24 @@ void NivelAereo::recogerObjetos()
     int fila = (int)(jugadorY + TAM_JUGADOR / 2) / TAM_BLOQUE;
     char bloque = bloqueEn(columna, fila);
 
-    if (bloque == 'L') { llaves++; mapa[fila][columna] = '.'; mostrarMensaje("Llave recogida"); }
+    if (bloque == 'L') {
+        llaves++;
+        mapa[fila][columna] = '.';
+        mostrarMensaje("Llave recogida");
+        sonidoRecoger.play();
+    }
     if (bloque == 'H') {
         if (salud < SALUD_MAXIMA) {
             salud += CURACION;
             if (salud > SALUD_MAXIMA) salud = SALUD_MAXIMA;
             mapa[fila][columna] = '.';
+            sonidoRecoger.play();
         }
     }
-    if (bloque == 'S') nivelCompleto = true;
+    if (bloque == 'S' && !nivelCompleto) {
+        nivelCompleto = true;
+        sonidoVictoria.play();
+    }
 }
 
 void NivelAereo::actualizarJugador()
@@ -283,6 +318,7 @@ void NivelAereo::actualizarJugador()
             balasJugador.append(bala);
             esperaDisparo = ESPERA_DISPARO_JUGADOR;
             emitirSenal(centroX, centroY);
+            sonidoDisparo.play();
 
             // Iniciar animación de disparo
             jugadorDisparando = true;
@@ -364,6 +400,7 @@ void NivelAereo::actualizarEnemigos()
                     enemigo.espera = ESPERA_DISPARO_ENEMIGO;
 
                     enemigo.estaDisparando = true;
+                    sonidoDisparoEnemigo.play();
                     enemigo.ticksDisparo = 25;
                     enemigo.frameAnimacion = 0;
                 }
@@ -536,6 +573,7 @@ void NivelAereo::actualizarVigilante(EnemigoAereo &enemigo)
     if (ve) {
         if (enemigo.estado != PERSEGUIR) {
             enemigo.estado = PERSEGUIR;
+            sonidoAlerta.play();
             emitirSenal(jugadorCentroX, jugadorCentroY);
         }
         enemigo.objetivoColumna = (int)jugadorCentroX / TAM_BLOQUE;
@@ -566,6 +604,7 @@ void NivelAereo::actualizarVigilante(EnemigoAereo &enemigo)
                 enemigo.espera = ESPERA_DISPARO_ENEMIGO;
 
                 enemigo.estaDisparando = true;
+                sonidoDisparoEnemigo.play();
                 enemigo.ticksDisparo = 25;
                 enemigo.frameAnimacion = 0;
             }
@@ -590,7 +629,12 @@ void NivelAereo::actualizarBalas()
             if (cuerpo.contains(balasJugador[i].x, balasJugador[i].y)) {
                 enemigos[j].salud -= DANO_BALA_JUGADOR;
                 eliminar = true;
-                if (enemigos[j].salud <= 0) enemigos.removeAt(j);
+                if (enemigos[j].salud <= 0) {
+                    manchas.append(QPoint((int)enemigos[j].x + TAM_ENEMIGO / 2, (int)enemigos[j].y + TAM_ENEMIGO / 2));
+                    if (manchas.size() > MAX_MANCHAS) manchas.removeFirst();
+                    sonidoMuerte.play();
+                    enemigos.removeAt(j);
+                }
             }
         }
         if (eliminar) balasJugador.removeAt(i);
@@ -627,6 +671,7 @@ void NivelAereo::reaparecer()
     salud = SALUD_MAXIMA;
     balasEnemigas.clear();
     balasJugador.clear();
+    sonidoRespawn.play();
     mostrarMensaje("Has muerto");
 }
 
@@ -652,7 +697,10 @@ void NivelAereo::actualizarCamara()
 
 void NivelAereo::actualizar()
 {
-    if (nivelCompleto) return;
+    if (nivelCompleto) {
+        if (SonidoFondo.isPlaying()) SonidoFondo.stop();
+        return;
+    }
     actualizarJugador();
     actualizarEnemigos();
     actualizarBalas();
@@ -707,6 +755,16 @@ void NivelAereo::dibujar(QPainter &pintor)
             } else if (bloque == 'S') {
                 pintor.fillRect(x + 4, y + 4, TAM_BLOQUE - 8, TAM_BLOQUE - 8, QColor(60, 200, 230));
             }
+        }
+    }
+
+    if (!texSangre.isNull()) {
+        for (int i = 0; i < manchas.size(); i++) {
+            pintor.save();
+            pintor.translate(manchas[i].x(), manchas[i].y());
+            pintor.rotate((manchas[i].x() * 7 + manchas[i].y() * 13) % 360);
+            pintor.drawPixmap(-TAM_SANGRE / 2, -TAM_SANGRE / 2, texSangre);
+            pintor.restore();
         }
     }
 
