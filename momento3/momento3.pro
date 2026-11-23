@@ -11,6 +11,7 @@ SOURCES += \
     enemigos.cpp \
     main.cpp \
     menu.cpp \
+    nivelaereo.cpp \
     nivellateral.cpp \
     objetos.cpp \
     personaje.cpp \
@@ -20,9 +21,11 @@ SOURCES += \
     widget.cpp
 
 HEADERS += \
+    Nivel.h \
     doomslayer.h \
     enemigos.h \
     menu.h \
+    nivelaereo.h \
     nivellateral.h \
     objetos.h \
     personaje.h \

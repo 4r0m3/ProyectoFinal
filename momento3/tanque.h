@@ -2,13 +2,14 @@
 #define TANQUE_H
 
 #include <QPainter>
+#include <QPixmap>
 #include <QRect>
 #include "enemigos.h"
 #include "proyectil.h"
 
 const int ANCHO_TANQUE = 100;
 const int ALTO_TANQUE = 50;
-const int SALUD_TANQUE = 150;
+const int SALUD_TANQUE = 300;
 
 class Tanque : public Enemigos
 {
@@ -23,6 +24,7 @@ public:
 private:
     Proyectil* crearBomba(int objetivoX, int objetivoY);
     bool jugadorEnElSuelo(const QRect &jugador) const;
+    void actualizarAnimacion(bool estaMoviendose, bool estaDisparando);
 
     int limiteIzq;
     int limiteDer;
@@ -41,7 +43,13 @@ private:
     int ticksRafaga;
     int esperaBala;
     int esperaRafaga;
+    int esperaBombaRafaga;
     Proyectil *balaListo;
+
+    QPixmap spriteSheet;
+    int frameActual;
+    int ticksAnimacion;
+    int filaActiva;
 };
 
 #endif

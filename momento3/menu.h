@@ -3,7 +3,7 @@
 
 #include <QPainter>
 #include <QStringList>
-#include "nivellateral.h"
+#include "nivel.h"
 
 class Menu
 {
@@ -15,6 +15,9 @@ public:
     void teclaSoltada(int tecla);
     void actualizar();
     void dibujar(QPainter &pintor);
+    void mouseMovido(int x, int y);
+    void mousePresionado(int x, int y);
+    void mouseSoltado();
     bool quiereSalir() const;
 
 private:
@@ -24,6 +27,7 @@ private:
     void cerrarNivel();
     void dibujarMenu(QPainter &pintor);
     void dibujarControles(QPainter &pintor);
+    void dibujarCinematica(QPainter &pintor);
 
     int ancho;
     int alto;
@@ -31,7 +35,15 @@ private:
     int seleccion;
     bool salir;
     QStringList opciones;
-    NivelLateral *nivelActual;
+    Nivel *nivelActual;
+
+    bool nivel2Desbloqueado;
+    int nivelJugando;
+
+    QStringList textosCinematica;
+    int paginaCinematica;
+    double opacidadCinematica;
+    int nivelPendiente;
 };
 
 #endif

@@ -4,7 +4,7 @@
 #include <QKeyEvent>
 #include <QRandomGenerator>
 
-const int INICIO_X = 20;
+const int INICIO_X = 100;
 const int ANCHO_NIVEL = 11600;
 const int SUELO_ABISMO = 5000;
 const int ALTO_DOOM = 60;
@@ -14,7 +14,7 @@ const int TOLERANCIA_PARED = 4;
 const int TICKS_ENTRE_DANO = 10;
 const int DANO_ESPINAS = 2;
 const int DANO_CAIDA = 20;
-const int PROBABILIDAD_CURACION = 5;
+const int PROBABILIDAD_CURACION = 10;
 const int ANCHO_FONDO = 800;
 const int REPETICIONES_PRIMER_FONDO = 3;
 const int MARGEN_CAMARA = 350;
@@ -140,8 +140,7 @@ NivelLateral::NivelLateral(int ancho, int alto)
     granaderoSobrePlataforma(4750, 180, 4730, 4840);
     objetos.append(new Objetos(TipoObjeto::Curacion, 5405, 246));
 
-
-    //zona jefe
+    // zona jefe
     plataformas.append(new Plataforma(9150, 350, 80, 10));
     plataformas.append(new Plataforma(9150, 250, 80, 10));
     plataformas.append(new Plataforma(9350, 350, 80, 10));
@@ -150,6 +149,7 @@ NivelLateral::NivelLateral(int ancho, int alto)
     plataformas.append(new Plataforma(9550, 250, 80, 10));
     objetos.append(new Objetos(TipoObjeto::ZonaJefe, ZONA_JEFE_X, 0, ANCHO_ZONA_JEFE, alto));
     objetos.append(new Objetos(TipoObjeto::Puerta, 10300, 360, 20, 30));
+
     seguroX = INICIO_X;
     seguroY = sueloEn(INICIO_X) - ALTO_DOOM;
     doom = new DoomSlayer(seguroX, seguroY);
@@ -169,6 +169,24 @@ NivelLateral::~NivelLateral()
     delete doom;
 }
 
+void NivelLateral::setModoTesteo(bool activo)
+{
+    modoTesteo = activo;
+    if (modoTesteo) {
+        jugadorMuerto = false;
+    }
+}
+
+bool NivelLateral::estaEnModoTesteo() const
+{
+    return modoTesteo;
+}
+
+bool NivelLateral::debeVolverAlMenu() const
+{
+    return volverAlMenu;
+}
+
 int NivelLateral::sueloEn(int x) const
 {
     for (const Tramo &t : tramos) {
@@ -180,6 +198,13 @@ int NivelLateral::sueloEn(int x) const
 void NivelLateral::teclaPresionada(int tecla)
 {
     if (nivelCompleto) return;
+
+    if (jugadorMuerto) {
+        if (tecla == Qt::Key_Return || tecla == Qt::Key_Enter) {
+            volverAlMenu = true;
+        }
+        return;
+    }
 
     teclas.insert(tecla);
     actualizarMovimiento();
@@ -340,8 +365,6 @@ void NivelLateral::actualizarSuelo()
 void NivelLateral::actualizarZonasJefe()
 {
     if (camaraJefe) return;
-
-
 
     for (Objetos *objeto : objetos) {
         if (objeto->detectarContacto(doom->getRect())) {
@@ -525,22 +548,27 @@ void NivelLateral::moverParabolicos(QList<Proyectil*> &lista, int radio, int dan
 {
     for (int i = lista.size() - 1; i >= 0; i--) {
         Proyectil *bomba = lista[i];
+        int yAnterior = bomba->getY();
         bomba->actualizar();
 
         bool explota = false;
-
-        if (tocaSuelo(bomba->getRect())) {
-            explota = true;
-        }
-
-        if (bomba->getRect().intersects(doom->getRect())) {
-            explota = true;
-        }
+        QRect rectBomba = bomba->getRect();
+        int altoBomba = rectBomba.height();
 
         for (Plataforma *plataforma : plataformas) {
-            if (bomba->getRect().intersects(plataforma->getRect())) {
+            QRect zona = plataforma->getRect();
+            bool solapaHorizontal = rectBomba.right() > zona.left() && rectBomba.left() < zona.right();
+            int fondoAnterior = yAnterior + altoBomba;
+            int fondoActual = rectBomba.bottom();
+
+            if (solapaHorizontal && fondoAnterior <= zona.top() + 6 && fondoActual >= zona.top()) {
                 explota = true;
+                break;
             }
+        }
+
+        if (!explota && tocaSuelo(rectBomba)) {
+            explota = true;
         }
 
         if (explota) {
@@ -597,7 +625,7 @@ void NivelLateral::revisarTanque()
 
 void NivelLateral::actualizar()
 {
-    if (nivelCompleto) return;
+    if (nivelCompleto || jugadorMuerto) return;
 
     if (ticksMensaje > 0) ticksMensaje--;
 
@@ -638,6 +666,11 @@ void NivelLateral::actualizar()
         if (granada != nullptr) {
             granadas.append(granada);
         }
+
+        Proyectil *granadaLista = enemigo->tomarGranada();
+        if (granadaLista != nullptr) {
+            granadas.append(granadaLista);
+        }
     }
 
     actualizarTanque();
@@ -648,6 +681,10 @@ void NivelLateral::actualizar()
     actualizarProyectilesEnemigos();
     revisarColisiones();
     actualizarCamara();
+
+    if (!modoTesteo && doom->getSalud() <= 0) {
+        jugadorMuerto = true;
+    }
 }
 
 void NivelLateral::dibujarTramo(QPainter &pintor, const Tramo &t)
@@ -780,6 +817,20 @@ void NivelLateral::dibujar(QPainter &pintor)
     if (ticksMensaje > 0) {
         pintor.setPen(Qt::white);
         pintor.drawText(330, 100, mensaje);
+    }
+
+    if (modoTesteo) {
+        pintor.setPen(QColor(120, 220, 255));
+        pintor.drawText(10, 120, "MODO TESTEO: ON");
+    }
+
+    if (jugadorMuerto) {
+        pintor.fillRect(0, 0, ancho, alto, QColor(80, 0, 0, 185));
+        pintor.setPen(Qt::white);
+        pintor.setFont(QFont("Arial", 30, QFont::Bold));
+        pintor.drawText(QRect(0, 0, ancho, alto - 40), Qt::AlignCenter, "HAS MUERTO");
+        pintor.setFont(QFont("Arial", 16, QFont::Normal));
+        pintor.drawText(QRect(0, 50, ancho, alto), Qt::AlignCenter, "Presiona ENTER para ir al menu");
     }
 
     if (nivelCompleto) {

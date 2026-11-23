@@ -24,10 +24,10 @@ const int VELOCIDAD_NORMAL = 5;
 const int VELOCIDAD_FURIA = 8;
 
 // plataformeo
-const int TICKS_COYOTE = 6;        // frames de gracia para saltar tras salir de un borde
-const int TICKS_BUFER_SALTO = 6;   // frames que se recuerda un salto pulsado antes de aterrizar
+const int TICKS_COYOTE = 6;
+const int TICKS_BUFER_SALTO = 6;
 const int VELOCIDAD_SALTO = -15;
-const int CORTE_SALTO = -4;        // al soltar W, la velocidad de subida se limita a esto
+const int CORTE_SALTO = -4;
 
 DoomSlayer::DoomSlayer(int x, int y)
     : Personaje(x, y, 100),

@@ -13,6 +13,7 @@
 #include "plataforma.h"
 #include "objetos.h"
 #include "tanque.h"
+#include "nivel.h"
 
 struct Tramo {
     int x;
@@ -28,17 +29,21 @@ struct Explosion {
     int ticks;
 };
 
-class NivelLateral
+class NivelLateral : public Nivel
 {
 public:
     NivelLateral(int ancho, int alto);
     ~NivelLateral();
 
-    void teclaPresionada(int tecla);
-    void teclaSoltada(int tecla);
-    void actualizar();
-    void dibujar(QPainter &pintor);
-    bool estaCompleto() const;
+    void teclaPresionada(int tecla) override;
+    void teclaSoltada(int tecla) override;
+    void actualizar() override;
+    void dibujar(QPainter &pintor) override;
+    bool estaCompleto() const override;
+    bool debeVolverAlMenu() const;
+
+    void setModoTesteo(bool activo);
+    bool estaEnModoTesteo() const;
 
 private:
     void actualizarMovimiento();
@@ -88,6 +93,9 @@ private:
     QSet<int> teclas;
     int ticksEspinas = 0;
     bool nivelCompleto = false;
+    bool jugadorMuerto = false;
+    bool volverAlMenu = false;
+    bool modoTesteo = false;
     QString mensaje;
     int ticksMensaje = 0;
 

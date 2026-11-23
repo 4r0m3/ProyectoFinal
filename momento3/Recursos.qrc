@@ -5,6 +5,14 @@
         <file>sprite/Suelo1.png</file>
         <file>sprite/Suelo2.png</file>
         <file>sprite/FondoNivel1_1.jpeg</file>
+        <file>sprite/Tanque.png</file>
+        <file>sprite/Policias.png</file>
+        <file>sprite/FondoNivelAereo(1).png</file>
+        <file>sprite/PoliciaNivelAereo.png</file>
+        <file>sprite/PoliciaAlterado.png</file>
+        <file>sprite/PoliciaBusqueda.png</file>
+        <file>sprite/Pasillos.png</file>
+        <file>sprite/Personaje.png</file>
     </qresource>
     <qresource prefix="/"/>
 </RCC>

@@ -2,7 +2,7 @@
 #include "doomslayer.h"
 
 const int CANTIDAD_CURACION = 30;
-const bool MOSTRAR_ZONA_JEFE = true;   // true para ver la zona mientras pruebas
+const bool MOSTRAR_ZONA_JEFE = false;
 
 Objetos::Objetos(TipoObjeto tipo, int x, int y, int ancho, int alto)
     : tipo(tipo),
