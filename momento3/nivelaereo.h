@@ -65,6 +65,7 @@ private:
     bool moverEnemigo(EnemigoAereo &enemigo, double dx, double dy);
     void recogerObjetos();
     void actualizarJugador();
+    void crearBalaJugador(double centroX, double centroY, double apuntaX, double apuntaY, double distancia);
     void actualizarEnemigos();
     void actualizarBalas();
     void patrullar(EnemigoAereo &enemigo);
@@ -94,6 +95,8 @@ private:
     int ticksInvulnerable;
     int esperaDisparo;
     bool disparando;
+    int disparosPendientes = 0;
+    int esperaEntreDisparos = 0;
     int mouseX;
     int mouseY;
     int camaraX;

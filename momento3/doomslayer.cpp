@@ -18,7 +18,7 @@ const int TICKS_SPRITE_DISPARO = 10;
 const int CARTUCHOS_MAXIMOS = 2;
 const int TICKS_DE_RECARGA = 60;
 
-const int TICKS_INVULNERABLE = 60;
+const int TICKS_INVULNERABLE = 40;
 const int DURACION_FURIA = 300;
 const int VELOCIDAD_NORMAL = 5;
 const int VELOCIDAD_FURIA = 8;

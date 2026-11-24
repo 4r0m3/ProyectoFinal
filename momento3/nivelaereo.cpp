@@ -9,8 +9,10 @@ const int COLUMNAS = 39;
 const int TAM_JUGADOR = 26;
 const double VELOCIDAD_JUGADOR = 4;
 const int SALUD_MAXIMA = 100;
-const int TICKS_INVULNERABLE = 45;
-const int ESPERA_DISPARO_JUGADOR = 12;
+const int TICKS_INVULNERABLE = 30;
+const int ESPERA_DISPARO_JUGADOR = 50;
+const int DISPAROS_POR_RAFAGA = 1;
+const int ESPERA_ENTRE_DISPAROS = 15;
 const double VELOCIDAD_BALA_JUGADOR = 10;
 const int DANO_BALA_JUGADOR = 10;
 
@@ -308,22 +310,23 @@ void NivelAereo::actualizarJugador()
     double apuntaY = mouseY + camaraY - centroY;
     double distancia = std::sqrt(apuntaX * apuntaX + apuntaY * apuntaY);
 
-    if (disparando && esperaDisparo == 0) {
-        if (distancia > 1) {
-            BalaAerea bala;
-            bala.x = centroX;
-            bala.y = centroY;
-            bala.vx = apuntaX / distancia * VELOCIDAD_BALA_JUGADOR;
-            bala.vy = apuntaY / distancia * VELOCIDAD_BALA_JUGADOR;
-            balasJugador.append(bala);
-            esperaDisparo = ESPERA_DISPARO_JUGADOR;
-            emitirSenal(centroX, centroY);
-            sonidoDisparo.play();
+    if (disparando && esperaDisparo == 0 && distancia > 1) {
+        crearBalaJugador(centroX, centroY, apuntaX, apuntaY, distancia);
+        disparosPendientes = DISPAROS_POR_RAFAGA - 1;
+        esperaEntreDisparos = ESPERA_ENTRE_DISPAROS;
+        esperaDisparo = ESPERA_DISPARO_JUGADOR;
+        jugadorDisparando = true;
+        ticksDisparoJugador = 25;
+        frameAnimacionJugador = 0;
+    }
 
-            // Iniciar animación de disparo
-            jugadorDisparando = true;
-            ticksDisparoJugador = 15;
-            frameAnimacionJugador = 0;
+    if (disparosPendientes > 0) {
+        esperaEntreDisparos--;
+        if (esperaEntreDisparos <= 0 && distancia > 1) {
+            crearBalaJugador(centroX, centroY, apuntaX, apuntaY, distancia);
+            disparosPendientes--;
+            esperaEntreDisparos = ESPERA_ENTRE_DISPAROS;
+            ticksDisparoJugador = 25;
         }
     }
 
@@ -361,6 +364,18 @@ void NivelAereo::actualizarJugador()
             ticksAnimacionJugador = 0;
         }
     }
+}
+
+void NivelAereo::crearBalaJugador(double centroX, double centroY, double apuntaX, double apuntaY, double distancia)
+{
+    BalaAerea bala;
+    bala.x = centroX;
+    bala.y = centroY;
+    bala.vx = apuntaX / distancia * VELOCIDAD_BALA_JUGADOR;
+    bala.vy = apuntaY / distancia * VELOCIDAD_BALA_JUGADOR;
+    balasJugador.append(bala);
+    emitirSenal(centroX, centroY);
+    sonidoDisparo.play();
 }
 
 void NivelAereo::actualizarEnemigos()
@@ -671,6 +686,7 @@ void NivelAereo::reaparecer()
     salud = SALUD_MAXIMA;
     balasEnemigas.clear();
     balasJugador.clear();
+    disparosPendientes = 0;
     sonidoRespawn.play();
     mostrarMensaje("Has muerto");
 }

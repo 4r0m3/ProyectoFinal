@@ -29,6 +29,7 @@ const int ANCHO_ZONA_JEFE = 40;
 const int VELOCIDAD_CAMARA_JEFE = 12;
 const int RADIO_EXPLOSION = 90;
 const int TICKS_EXPLOSION = 20;
+const int CUADROS_EXPLOSION = 5;
 const int DANO_EXPLOSION = 15;
 const int DANO_A_TANQUE = 15;
 const int RADIO_GRANADA = 50;
@@ -56,6 +57,7 @@ NivelLateral::NivelLateral(int ancho, int alto)
 
     suelo1.load(":/imagenes/sprite/Suelo1");
     suelo2.load(":/imagenes/sprite/Suelo2");
+    texExplosion.load(":/imagenes/sprite/Explocion.png");
 
     if (!suelo1.isNull()) {
         suelo1 = suelo1.scaled(ANCHO_SUELO1, ALTO_IMAGEN_SUELO, Qt::IgnoreAspectRatio, Qt::FastTransformation);
@@ -80,6 +82,14 @@ NivelLateral::NivelLateral(int ancho, int alto)
 
     sonidoExplosion.setSource(QUrl("qrc:/Sonido/sonidos/sound-explocion.wav"));
     sonidoExplosion.setVolume(0.75);
+
+    sonidoFondo1.setSource(QUrl("qrc:/Sonido/sonidos/sound-background-1.wav"));
+    sonidoFondo1.setVolume(0.35);
+    sonidoFondo1.setLoopCount(QSoundEffect::Infinite);
+
+    sonidoFondo2.setSource(QUrl("qrc:/Sonido/sonidos/sound-background-2.wav"));
+    sonidoFondo2.setVolume(0.35);
+    sonidoFondo2.setLoopCount(QSoundEffect::Infinite);
 
     tramos.append(Tramo{    0,  450, 400, false });
     tramos.append(Tramo{  550,  250, 360, false });
@@ -171,10 +181,18 @@ NivelLateral::NivelLateral(int ancho, int alto)
     seguroY = sueloEn(INICIO_X) - ALTO_DOOM;
     doom = new DoomSlayer(seguroX, seguroY);
     actualizarCamara();
+
+    usandoFondo2 = (doom->getRect().center().x() >= REPETICIONES_PRIMER_FONDO * anchoFondo);
+    if (usandoFondo2) {
+        sonidoFondo2.play();
+    } else {
+        sonidoFondo1.play();
+    }
 }
 
 NivelLateral::~NivelLateral()
 {
+    detenerMusicaFondo();
     qDeleteAll(proyectiles);
     qDeleteAll(enemigos);
     qDeleteAll(plataformas);
@@ -184,6 +202,32 @@ NivelLateral::~NivelLateral()
     qDeleteAll(granadas);
     delete tanque;
     delete doom;
+}
+
+void NivelLateral::detenerMusicaFondo()
+{
+    if (sonidoFondo1.isPlaying()) sonidoFondo1.stop();
+    if (sonidoFondo2.isPlaying()) sonidoFondo2.stop();
+}
+
+void NivelLateral::actualizarMusicaFondo()
+{
+    int limiteFondo2 = REPETICIONES_PRIMER_FONDO * anchoFondo;
+    bool enSegundoFondo = (doom->getRect().center().x() >= limiteFondo2);
+
+    if (enSegundoFondo) {
+        if (!usandoFondo2 || !sonidoFondo2.isPlaying()) {
+            if (sonidoFondo1.isPlaying()) sonidoFondo1.stop();
+            sonidoFondo2.play();
+            usandoFondo2 = true;
+        }
+    } else {
+        if (usandoFondo2 || !sonidoFondo1.isPlaying()) {
+            if (sonidoFondo2.isPlaying()) sonidoFondo2.stop();
+            sonidoFondo1.play();
+            usandoFondo2 = false;
+        }
+    }
 }
 
 void NivelLateral::setModoTesteo(bool activo)
@@ -278,6 +322,7 @@ void NivelLateral::interactuar()
         if (objetos[i]->getTipo() == TipoObjeto::Puerta) {
             if (exito) {
                 nivelCompleto = true;
+                detenerMusicaFondo();
             } else {
                 mensaje = "Necesitas la llave";
                 ticksMensaje = 120;
@@ -650,7 +695,17 @@ void NivelLateral::revisarTanque()
 
 void NivelLateral::actualizar()
 {
-    if (nivelCompleto || jugadorMuerto) return;
+    if (nivelCompleto) {
+        detenerMusicaFondo();
+        return;
+    }
+
+    if (jugadorMuerto) {
+        detenerMusicaFondo();
+        return;
+    }
+
+    actualizarMusicaFondo();
 
     if (ticksMensaje > 0) ticksMensaje--;
 
@@ -712,6 +767,7 @@ void NivelLateral::actualizar()
 
     if (!modoTesteo && doom->getSalud() <= 0) {
         jugadorMuerto = true;
+        detenerMusicaFondo();
     }
 }
 
@@ -816,9 +872,23 @@ void NivelLateral::dibujar(QPainter &pintor)
     }
 
     for (int i = 0; i < explosiones.size(); i++) {
-        pintor.setPen(Qt::NoPen);
-        pintor.setBrush(QColor(255, 140, 0, 130));
-        pintor.drawEllipse(QPoint(explosiones[i].x, explosiones[i].y), explosiones[i].radio, explosiones[i].radio);
+        int x = explosiones[i].x;
+        int y = explosiones[i].y;
+        int radio = explosiones[i].radio;
+        if (texExplosion.isNull()) {
+            pintor.setPen(Qt::NoPen);
+            pintor.setBrush(QColor(255, 140, 0, 130));
+            pintor.drawEllipse(QPoint(x, y), radio, radio);
+        } else {
+            int cuadro = (TICKS_EXPLOSION - explosiones[i].ticks) * CUADROS_EXPLOSION / TICKS_EXPLOSION;
+            if (cuadro < 0) cuadro = 0;
+            if (cuadro >= CUADROS_EXPLOSION) cuadro = CUADROS_EXPLOSION - 1;
+            int ladoCuadro = texExplosion.width() / CUADROS_EXPLOSION;
+            int lado = radio * 2;
+            QRect origen(cuadro * ladoCuadro, 0, ladoCuadro, texExplosion.height());
+            QRect destino(x - radio, y - radio, lado, lado);
+            pintor.drawPixmap(destino, texExplosion, origen);
+        }
     }
 
     pintor.restore();

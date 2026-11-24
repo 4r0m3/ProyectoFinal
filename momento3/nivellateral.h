@@ -47,6 +47,8 @@ public:
     bool estaEnModoTesteo() const;
 
 private:
+    void actualizarMusicaFondo();
+    void detenerMusicaFondo();
     void actualizarMovimiento();
     void actualizarProyectiles();
     void actualizarSuelo();
@@ -72,6 +74,7 @@ private:
     QPixmap fondo2;
     QPixmap suelo1;
     QPixmap suelo2;
+    QPixmap texExplosion;
     int repeticionesFondo;
     int anchoFondo;
 
@@ -110,6 +113,8 @@ private:
     QSoundEffect sonidoRafagaTanque;
     QSoundEffect sonidoRecoleccion;
     QSoundEffect sonidoExplosion;
+    QSoundEffect sonidoFondo1;
+    QSoundEffect sonidoFondo2;
+    bool usandoFondo2 = false;
 };
-
 #endif

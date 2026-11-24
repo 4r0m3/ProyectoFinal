@@ -54,7 +54,7 @@ Menu::Menu(int ancho, int alto)
     opciones.append("Controles");
     opciones.append("Salir");
 
-    sonidoTransicion.setSource(QUrl("qrc:/Sonido/sonidos/sound-transicion.wav"));
+    sonidoTransicion.setSource(QUrl("qrc:/Sonido/sonidos/sound-transicion_1.wav"));
     sonidoTransicion.setVolume(0.5);
 }
 

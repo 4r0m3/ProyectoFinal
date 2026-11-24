@@ -13,6 +13,7 @@
         <file>sprite/Pasillos.png</file>
         <file>sprite/Personaje.png</file>
         <file>sprite/sangre-fondo.png</file>
+        <file>sprite/Explocion.png</file>
     </qresource>
     <qresource prefix="/"/>
     <qresource prefix="/Sonido">
@@ -26,5 +27,8 @@
         <file>sonidos/sound-collet.wav</file>
         <file>sonidos/sound-explocion.wav</file>
         <file>sonidos/sound-transicion.wav</file>
+        <file>sonidos/sound-transicion_1.wav</file>
+        <file>sonidos/sound-background-1.wav</file>
+        <file>sonidos/sound-background-2.wav</file>
     </qresource>
 </RCC>
