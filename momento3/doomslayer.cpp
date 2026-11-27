@@ -18,10 +18,11 @@ const int TICKS_SPRITE_DISPARO = 10;
 const int CARTUCHOS_MAXIMOS = 2;
 const int TICKS_DE_RECARGA = 60;
 
-const int TICKS_INVULNERABLE = 40;
+const int TICKS_INVULNERABLE = 60;
 const int DURACION_FURIA = 300;
 const int VELOCIDAD_NORMAL = 5;
 const int VELOCIDAD_FURIA = 8;
+const int VELOCIDAD_LENTA = 3;
 
 // plataformeo
 const int TICKS_COYOTE = 6;
@@ -126,7 +127,9 @@ QRect DoomSlayer::getRect() const
 
 void DoomSlayer::actualizar()
 {
-    int rapidez = (ticksFuria > 0) ? VELOCIDAD_FURIA : VELOCIDAD_NORMAL;
+    int rapidez = VELOCIDAD_NORMAL;
+    if (lento) rapidez = VELOCIDAD_LENTA;
+    if (ticksFuria > 0) rapidez = VELOCIDAD_FURIA;
     x += direccionX * rapidez;
 
     if (ticksDisparo > 0) {
@@ -274,6 +277,11 @@ void DoomSlayer::activarFuria()
     ticksFuria = DURACION_FURIA;
     cartuchos = CARTUCHOS_MAXIMOS;
     esperaRecarga = 0;
+}
+
+void DoomSlayer::setLento(bool activo)
+{
+    lento = activo;
 }
 
 int DoomSlayer::getTicksFuria() const

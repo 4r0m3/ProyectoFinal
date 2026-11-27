@@ -16,6 +16,9 @@ const int TICKS_ENTRE_DANO = 10;
 const int DANO_ESPINAS = 2;
 const int DANO_CAIDA = 20;
 const int PROBABILIDAD_CURACION = 10;
+const int PROBABILIDAD_FURIA_FACIL = 15;
+const int PROBABILIDAD_FURIA_DIFICIL = 5;
+const int SALUD_LENTO = 40;
 const int ANCHO_FONDO = 800;
 const int REPETICIONES_PRIMER_FONDO = 3;
 const int MARGEN_CAMARA = 350;
@@ -34,8 +37,10 @@ const int DANO_EXPLOSION = 15;
 const int DANO_A_TANQUE = 15;
 const int RADIO_GRANADA = 50;
 const int DANO_GRANADA = 10;
+const int SALUD_MAXIMA_DOOM = 100;
+const int ANCHO_BARRA_SALUD = 200;
 
-NivelLateral::NivelLateral(int ancho, int alto)
+NivelLateral::NivelLateral(int ancho, int alto, int nivelDificultad)
     : repeticionesFondo(0),
     anchoFondo(ANCHO_FONDO),
     ancho(ancho),
@@ -43,6 +48,7 @@ NivelLateral::NivelLateral(int ancho, int alto)
     anchoNivel(ANCHO_NIVEL),
     camaraX(0)
 {
+    dificultad = nivelDificultad;
     repeticionesFondo = (anchoNivel + anchoFondo - 1) / anchoFondo;
 
     fondo.load(":/imagenes/sprite/FondoNivel1");
@@ -90,6 +96,9 @@ NivelLateral::NivelLateral(int ancho, int alto)
     sonidoFondo2.setSource(QUrl("qrc:/Sonido/sonidos/sound-background-2.wav"));
     sonidoFondo2.setVolume(0.35);
     sonidoFondo2.setLoopCount(QSoundEffect::Infinite);
+
+    sonidoGameOver.setSource(QUrl("qrc:/Sonido/sonidos/sound-game-over.wav"));
+    sonidoGameOver.setVolume(0.8);
 
     tramos.append(Tramo{    0,  450, 400, false });
     tramos.append(Tramo{  550,  250, 360, false });
@@ -241,6 +250,11 @@ void NivelLateral::setModoTesteo(bool activo)
 bool NivelLateral::estaEnModoTesteo() const
 {
     return modoTesteo;
+}
+
+bool NivelLateral::terminoSonidoFinal() const
+{
+    return sonidoFinalTerminado;
 }
 
 bool NivelLateral::debeVolverAlMenu() const
@@ -550,10 +564,17 @@ void NivelLateral::revisarColisiones()
                 if (enemigos[j]->getSalud() <= 0) {
                     QRect zona = enemigos[j]->getRect();
 
-                    if (QRandomGenerator::global()->bounded(100) < PROBABILIDAD_CURACION) {
-                        int xObjeto = zona.center().x() - 12;
-                        int yObjeto = zona.y() + zona.height() - 24;
+                    int probabilidadFuria = PROBABILIDAD_FURIA_FACIL;
+                    if (dificultad == 1) probabilidadFuria = PROBABILIDAD_FURIA_DIFICIL;
+
+                    int tirada = QRandomGenerator::global()->bounded(100);
+                    int xObjeto = zona.center().x() - 12;
+                    int yObjeto = zona.y() + zona.height() - 24;
+
+                    if (tirada < PROBABILIDAD_CURACION) {
                         objetos.append(new Objetos(TipoObjeto::Curacion, xObjeto, yObjeto));
+                    } else if (tirada < PROBABILIDAD_CURACION + probabilidadFuria) {
+                        objetos.append(new Objetos(TipoObjeto::Furia, xObjeto, yObjeto));
                     }
 
                     delete enemigos[j];
@@ -702,10 +723,22 @@ void NivelLateral::actualizar()
 
     if (jugadorMuerto) {
         detenerMusicaFondo();
+        if (!sonidoFinalIniciado) {
+            sonidoGameOver.play();
+            sonidoFinalIniciado = true;
+            ticksSonidoFinal = 0;
+        } else {
+            ticksSonidoFinal++;
+            if (ticksSonidoFinal > 20 && !sonidoGameOver.isPlaying()) {
+                sonidoFinalTerminado = true;
+            }
+        }
         return;
     }
 
     actualizarMusicaFondo();
+
+    doom->setLento(dificultad == 1 && doom->getSalud() <= SALUD_LENTO);
 
     if (ticksMensaje > 0) ticksMensaje--;
 
@@ -900,17 +933,24 @@ void NivelLateral::dibujar(QPainter &pintor)
     }
 
     pintor.setPen(Qt::white);
-    pintor.drawText(10, 20, QString("Salud: %1").arg(doom->getSalud()));
+    int salud = doom->getSalud();
+    if (salud < 0) salud = 0;
+    if (salud > SALUD_MAXIMA_DOOM) salud = SALUD_MAXIMA_DOOM;
+    pintor.fillRect(10, 8, ANCHO_BARRA_SALUD, 16, QColor(60, 0, 0));
+    pintor.fillRect(10, 8, ANCHO_BARRA_SALUD * salud / SALUD_MAXIMA_DOOM, 16, QColor(220, 30, 30));
+    pintor.setPen(Qt::white);
+    pintor.drawRect(10, 8, ANCHO_BARRA_SALUD, 16);
+    pintor.drawText(QRect(10, 8, ANCHO_BARRA_SALUD, 16), Qt::AlignCenter, QString("%1 / %2").arg(salud).arg(SALUD_MAXIMA_DOOM));
+
+    if (dificultad == 1 && salud <= SALUD_LENTO) {
+        pintor.setPen(QColor(255, 120, 120));
+        pintor.drawText(220, 21, "Herido: movimiento lento");
+        pintor.setPen(Qt::white);
+    }
     pintor.drawText(10, 40, QString("Llave: %1").arg(doom->tieneLlave() ? "Si" : "No"));
     pintor.drawText(10, 60, "E: interactuar");
     pintor.drawText(10, 80, "W: saltar  , A: izquierda , D: Derecha");
     pintor.drawText(10, 100, "Espacio: Dispara");
-
-    if (doom->getTicksFuria() > 0) {
-        pintor.setPen(QColor(255, 80, 80));
-        double segundos = doom->getTicksFuria() * 0.016;
-        pintor.drawText(10, 80, QString("FURIA: %1 s").arg(segundos, 0, 'f', 1));
-    }
 
     if (ticksMensaje > 0) {
         pintor.setPen(Qt::white);

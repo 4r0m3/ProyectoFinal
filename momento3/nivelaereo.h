@@ -43,13 +43,15 @@ struct BalaAerea {
 class NivelAereo : public Nivel
 {
 public:
-    NivelAereo(int ancho, int alto);
+    NivelAereo(int ancho, int alto, int nivelDificultad = 0);
 
     void teclaPresionada(int tecla) override;
     void teclaSoltada(int tecla) override;
     void actualizar() override;
     void dibujar(QPainter &pintor) override;
     bool estaCompleto() const override;
+    bool estaPerdido() const;
+    bool terminoSonidoFinal() const;
 
     void mouseMovido(int x, int y) override;
     void mousePresionado(int x, int y) override;
@@ -70,7 +72,8 @@ private:
     void actualizarBalas();
     void patrullar(EnemigoAereo &enemigo);
     void actualizarVigilante(EnemigoAereo &enemigo);
-    void emitirSenal(double x, double y);
+    void emitirSenal(double x, double y, int alcance);
+    bool dentroDelCono(const EnemigoAereo &enemigo, double dx, double dy, double distancia) const;
     QList<QPoint> calcularRuta(double xDesde, double yDesde, int columnaDestino, int filaDestino) const;
     void seguirRuta(EnemigoAereo &enemigo);
     void recibirDano(int dano);
@@ -102,6 +105,9 @@ private:
     int camaraX;
     int camaraY;
     bool nivelCompleto;
+    int dificultad = 0;
+    int vidas = 3;
+    bool jugadorPerdido = false;
     QString mensaje;
     int ticksMensaje;
 
@@ -129,6 +135,10 @@ private:
     QSoundEffect sonidoPuerta;
     QSoundEffect SonidoFondo;
     QSoundEffect sonidoRecoger;
+    QSoundEffect sonidoGameOver;
+    bool sonidoFinalIniciado = false;
+    bool sonidoFinalTerminado = false;
+    int ticksSonidoFinal = 0;
 
 
     double escalaPolicia;

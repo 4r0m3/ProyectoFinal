@@ -28,6 +28,10 @@ const int DANO_CONTACTO = 15;
 
 const double VELOCIDAD_VIGILANTE = 2.4;
 const int ALCANCE_SENAL = 14;
+const int ALCANCE_ALERTA = 1000;
+const double COSENO_VISION = 0.5;
+const int VIDAS_FACIL = 3;
+const int VIDAS_DIFICIL = 1;
 const int TICKS_BUSCAR = 150;
 
 const int PATRULLA = 0;
@@ -66,7 +70,7 @@ const char *MAPA[FILAS] = {
     "#######################################"
 };
 
-NivelAereo::NivelAereo(int ancho, int alto)
+NivelAereo::NivelAereo(int ancho, int alto, int nivelDificultad)
     : ancho(ancho),
     alto(alto),
     jugadorX(0),
@@ -90,6 +94,12 @@ NivelAereo::NivelAereo(int ancho, int alto)
     jugadorDisparando(false),
     ticksDisparoJugador(0)
 {
+    dificultad = nivelDificultad;
+    if (dificultad == 1) {
+        vidas = VIDAS_DIFICIL;
+    } else {
+        vidas = VIDAS_FACIL;
+    }
 
     escalaPolicia = 2.5;
     escalaPoliciaAlterado = 2.5;
@@ -131,6 +141,9 @@ NivelAereo::NivelAereo(int ancho, int alto)
     SonidoFondo.setSource(QUrl("qrc:/Sonido/sonidos/sound-background.wav"));
     SonidoFondo.setVolume(0.35);
     SonidoFondo.setLoopCount(QSoundEffect::Infinite);
+
+    sonidoGameOver.setSource(QUrl("qrc:/Sonido/sonidos/sound-game-over.wav"));
+    sonidoGameOver.setVolume(0.8);
     SonidoFondo.play();
 
     for (int fila = 0; fila < FILAS; fila++) {
@@ -175,12 +188,14 @@ NivelAereo::NivelAereo(int ancho, int alto)
     actualizarCamara();
 }
 
-void NivelAereo::teclaPresionada(int tecla) { if (nivelCompleto) return; teclas.insert(tecla); }
+void NivelAereo::teclaPresionada(int tecla) { if (nivelCompleto || jugadorPerdido) return; teclas.insert(tecla); }
 void NivelAereo::teclaSoltada(int tecla) { teclas.remove(tecla); }
 void NivelAereo::mouseMovido(int x, int y) { mouseX = x; mouseY = y; }
 void NivelAereo::mousePresionado(int x, int y) { mouseX = x; mouseY = y; disparando = true; }
 void NivelAereo::mouseSoltado() { disparando = false; }
 bool NivelAereo::estaCompleto() const { return nivelCompleto; }
+bool NivelAereo::estaPerdido() const { return jugadorPerdido; }
+bool NivelAereo::terminoSonidoFinal() const { return sonidoFinalTerminado; }
 
 char NivelAereo::bloqueEn(int columna, int fila) const
 {
@@ -374,8 +389,24 @@ void NivelAereo::crearBalaJugador(double centroX, double centroY, double apuntaX
     bala.vx = apuntaX / distancia * VELOCIDAD_BALA_JUGADOR;
     bala.vy = apuntaY / distancia * VELOCIDAD_BALA_JUGADOR;
     balasJugador.append(bala);
-    emitirSenal(centroX, centroY);
+    emitirSenal(centroX, centroY, ALCANCE_SENAL);
     sonidoDisparo.play();
+}
+
+bool NivelAereo::dentroDelCono(const EnemigoAereo &enemigo, double dx, double dy, double distancia) const
+{
+    if (dificultad == 1) return true;
+    if (distancia < 1) return true;
+
+    double miraX = 0;
+    double miraY = 0;
+    if (enemigo.direccionMirada == 0) miraY = 1;
+    else if (enemigo.direccionMirada == 1) miraY = -1;
+    else if (enemigo.direccionMirada == 2) miraX = 1;
+    else miraX = -1;
+
+    double producto = (miraX * dx + miraY * dy) / distancia;
+    return producto > COSENO_VISION;
 }
 
 void NivelAereo::actualizarEnemigos()
@@ -400,7 +431,7 @@ void NivelAereo::actualizarEnemigos()
 
             if (enemigo.espera > 0) enemigo.espera--;
 
-            bool ve = distancia < VISION && hayLineaLibre(centroX, centroY, jugadorCentroX, jugadorCentroY);
+            bool ve = distancia < VISION && hayLineaLibre(centroX, centroY, jugadorCentroX, jugadorCentroY) && dentroDelCono(enemigo, dx, dy, distancia);
 
             if (ve) {
                 moverEnemigo(enemigo, dx / distancia * VELOCIDAD_PERSECUCION, dy / distancia * VELOCIDAD_PERSECUCION);
@@ -552,7 +583,7 @@ void NivelAereo::seguirRuta(EnemigoAereo &enemigo)
     moverEnemigo(enemigo, dx, dy);
 }
 
-void NivelAereo::emitirSenal(double x, double y)
+void NivelAereo::emitirSenal(double x, double y, int alcance)
 {
     int columnaSenal = (int)x / TAM_BLOQUE;
     int filaSenal = (int)y / TAM_BLOQUE;
@@ -562,7 +593,7 @@ void NivelAereo::emitirSenal(double x, double y)
         if (!enemigo.inteligente || enemigo.estado == PERSEGUIR) continue;
 
         QList<QPoint> ruta = calcularRuta(enemigo.x, enemigo.y, columnaSenal, filaSenal);
-        if (!ruta.isEmpty() && ruta.size() <= ALCANCE_SENAL) {
+        if (!ruta.isEmpty() && ruta.size() <= alcance) {
             enemigo.ruta = ruta;
             enemigo.objetivoColumna = columnaSenal;
             enemigo.objetivoFila = filaSenal;
@@ -584,12 +615,15 @@ void NivelAereo::actualizarVigilante(EnemigoAereo &enemigo)
     if (enemigo.espera > 0) enemigo.espera--;
 
     bool ve = distancia < VISION && hayLineaLibre(centroX, centroY, jugadorCentroX, jugadorCentroY);
+    if (ve && enemigo.estado != PERSEGUIR && !dentroDelCono(enemigo, dx, dy, distancia)) ve = false;
 
     if (ve) {
         if (enemigo.estado != PERSEGUIR) {
             enemigo.estado = PERSEGUIR;
             sonidoAlerta.play();
-            emitirSenal(jugadorCentroX, jugadorCentroY);
+            if (dificultad == 1) {
+                emitirSenal(jugadorCentroX, jugadorCentroY, ALCANCE_ALERTA);
+            }
         }
         enemigo.objetivoColumna = (int)jugadorCentroX / TAM_BLOQUE;
         enemigo.objetivoFila = (int)jugadorCentroY / TAM_BLOQUE;
@@ -676,7 +710,18 @@ void NivelAereo::recibirDano(int dano)
     if (ticksInvulnerable > 0) return;
     salud -= dano;
     ticksInvulnerable = TICKS_INVULNERABLE;
-    if (salud <= 0) reaparecer();
+    if (salud <= 0) {
+        vidas--;
+        if (vidas <= 0) {
+            jugadorPerdido = true;
+            balasEnemigas.clear();
+            balasJugador.clear();
+            disparosPendientes = 0;
+            if (SonidoFondo.isPlaying()) SonidoFondo.stop();
+        } else {
+            reaparecer();
+        }
+    }
 }
 
 void NivelAereo::reaparecer()
@@ -688,7 +733,7 @@ void NivelAereo::reaparecer()
     balasJugador.clear();
     disparosPendientes = 0;
     sonidoRespawn.play();
-    mostrarMensaje("Has muerto");
+    mostrarMensaje(QString("Has muerto. Intentos restantes: %1").arg(vidas));
 }
 
 void NivelAereo::mostrarMensaje(const QString &texto)
@@ -715,6 +760,20 @@ void NivelAereo::actualizar()
 {
     if (nivelCompleto) {
         if (SonidoFondo.isPlaying()) SonidoFondo.stop();
+        return;
+    }
+    if (jugadorPerdido) {
+        if (SonidoFondo.isPlaying()) SonidoFondo.stop();
+        if (!sonidoFinalIniciado) {
+            sonidoGameOver.play();
+            sonidoFinalIniciado = true;
+            ticksSonidoFinal = 0;
+        } else {
+            ticksSonidoFinal++;
+            if (ticksSonidoFinal > 20 && !sonidoGameOver.isPlaying()) {
+                sonidoFinalTerminado = true;
+            }
+        }
         return;
     }
     actualizarJugador();
@@ -902,6 +961,8 @@ void NivelAereo::dibujar(QPainter &pintor)
     pintor.drawText(10, 45, QString("Llaves: %1").arg(llaves));
     pintor.drawText(10, 65, QString("Enemigos: %1").arg(enemigos.size()));
     pintor.drawText(10, 85, "WASD: mover  Mouse: apuntar y disparar");
+    pintor.drawText(10, 105, QString("Intentos: %1").arg(vidas));
+    pintor.drawText(10, 125, (dificultad == 1) ? "Dificultad: Dificil" : "Dificultad: Facil");
 
     if (ticksMensaje > 0) {
         pintor.drawText(QRect(0, 100, ancho, 30), Qt::AlignCenter, mensaje);
@@ -912,5 +973,14 @@ void NivelAereo::dibujar(QPainter &pintor)
         pintor.setPen(Qt::white);
         pintor.setFont(QFont("Arial", 28, QFont::Bold));
         pintor.drawText(QRect(0, 0, ancho, alto), Qt::AlignCenter, "Nivel completado");
+    }
+
+    if (jugadorPerdido) {
+        pintor.fillRect(0, 0, ancho, alto, QColor(80, 0, 0, 185));
+        pintor.setPen(Qt::white);
+        pintor.setFont(QFont("Arial", 30, QFont::Bold));
+        pintor.drawText(QRect(0, 0, ancho, alto - 40), Qt::AlignCenter, "Has Perdido");
+        pintor.setFont(QFont("Arial", 16, QFont::Normal));
+        pintor.drawText(QRect(0, 50, ancho, alto), Qt::AlignCenter, "Presiona ENTER para ir al menu");
     }
 }

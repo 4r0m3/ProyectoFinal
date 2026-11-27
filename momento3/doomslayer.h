@@ -29,6 +29,7 @@ public:
     bool tieneLlave() const;
     void curar(int cantidad);
     void activarFuria();
+    void setLento(bool activo);
     int getTicksFuria() const;
 
     void golpeado(int direccion, int dano);
@@ -47,6 +48,7 @@ private:
     int ticksDisparo;
     int ticksInvulnerable;
     bool llave;
+    bool lento = false;
     int ticksFuria;
     int ticksCoyote;
     int ticksBufer;

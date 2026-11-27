@@ -30,5 +30,6 @@
         <file>sonidos/sound-transicion_1.wav</file>
         <file>sonidos/sound-background-1.wav</file>
         <file>sonidos/sound-background-2.wav</file>
+        <file>sonidos/sound-game-over.wav</file>
     </qresource>
 </RCC>

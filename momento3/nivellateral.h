@@ -33,7 +33,7 @@ struct Explosion {
 class NivelLateral : public Nivel
 {
 public:
-    NivelLateral(int ancho, int alto);
+    NivelLateral(int ancho, int alto, int nivelDificultad = 0);
     ~NivelLateral();
 
     void teclaPresionada(int tecla) override;
@@ -42,6 +42,7 @@ public:
     void dibujar(QPainter &pintor) override;
     bool estaCompleto() const override;
     bool debeVolverAlMenu() const;
+    bool terminoSonidoFinal() const;
 
     void setModoTesteo(bool activo);
     bool estaEnModoTesteo() const;
@@ -80,6 +81,7 @@ private:
 
     int ancho;
     int alto;
+    int dificultad = 0;
     int anchoNivel;
     int camaraX;
     bool camaraJefe = false;
@@ -116,5 +118,9 @@ private:
     QSoundEffect sonidoFondo1;
     QSoundEffect sonidoFondo2;
     bool usandoFondo2 = false;
+    QSoundEffect sonidoGameOver;
+    bool sonidoFinalIniciado = false;
+    bool sonidoFinalTerminado = false;
+    int ticksSonidoFinal = 0;
 };
 #endif

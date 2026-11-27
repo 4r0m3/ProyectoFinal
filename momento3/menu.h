@@ -23,6 +23,7 @@ public:
 
 private:
     void moverSeleccion(int cambio);
+    void cambiarDificultad();
     void elegirOpcion();
     void iniciarNivel(int numero);
     void cerrarNivel();
@@ -40,6 +41,7 @@ private:
 
     bool nivel2Desbloqueado;
     int nivelJugando;
+    int dificultad = 0;
 
     QStringList textosCinematica;
     int paginaCinematica;

@@ -51,6 +51,7 @@ Menu::Menu(int ancho, int alto)
 {
     opciones.append("Nivel 1");
     opciones.append("Nivel 2");
+    opciones.append("Dificultad: Facil");
     opciones.append("Controles");
     opciones.append("Salir");
 
@@ -75,7 +76,6 @@ void Menu::teclaPresionada(int tecla)
         // Si el nivel se completó con éxito
         if (nivelActual->estaCompleto()) {
             if (tecla == Qt::Key_Return || tecla == Qt::Key_Enter) {
-                // Si acabamos de pasar el nivel 1, desbloqueamos el 2
                 if (nivelJugando == 1) {
                     nivel2Desbloqueado = true;
                 }
@@ -99,6 +99,13 @@ void Menu::teclaPresionada(int tecla)
 
         NivelLateral *lateral = dynamic_cast<NivelLateral*>(nivelActual);
         if (lateral != nullptr && lateral->debeVolverAlMenu()) {
+            if (tecla == Qt::Key_Return || tecla == Qt::Key_Enter) {
+                cerrarNivel();
+            }
+        }
+
+        NivelAereo *aereo = dynamic_cast<NivelAereo*>(nivelActual);
+        if (aereo != nullptr && aereo->estaPerdido()) {
             if (tecla == Qt::Key_Return || tecla == Qt::Key_Enter) {
                 cerrarNivel();
             }
@@ -149,6 +156,10 @@ void Menu::teclaPresionada(int tecla)
         moverSeleccion(1);
     }
 
+    if (seleccion == 2 && (tecla == Qt::Key_A || tecla == Qt::Key_D || tecla == Qt::Key_Left || tecla == Qt::Key_Right)) {
+        cambiarDificultad();
+    }
+
     if (tecla == Qt::Key_Return || tecla == Qt::Key_Enter || tecla == Qt::Key_Space) {
         elegirOpcion();
     }
@@ -186,11 +197,23 @@ void Menu::actualizar()
 {
     if (estado == JUGANDO) {
         nivelActual->actualizar();
+
+        NivelLateral *lateral = dynamic_cast<NivelLateral*>(nivelActual);
+        if (lateral != nullptr && lateral->terminoSonidoFinal()) {
+            cerrarNivel();
+            return;
+        }
+
+        NivelAereo *aereo = dynamic_cast<NivelAereo*>(nivelActual);
+        if (aereo != nullptr && aereo->terminoSonidoFinal()) {
+            cerrarNivel();
+            return;
+        }
     }
-    // Actualizar el efecto de "fade-in" en la cinemática
+
     else if (estado == EN_CINEMATICA) {
         if (opacidadCinematica < 255.0) {
-            opacidadCinematica += 2.5; // Velocidad de aclarado (ajústala a tu gusto)
+            opacidadCinematica += 2.5; //
             if (opacidadCinematica > 255.0) opacidadCinematica = 255.0;
         }
     }
@@ -209,6 +232,17 @@ void Menu::moverSeleccion(int cambio)
     }
 }
 
+void Menu::cambiarDificultad()
+{
+    if (dificultad == 0) {
+        dificultad = 1;
+        opciones[2] = "Dificultad: Dificil";
+    } else {
+        dificultad = 0;
+        opciones[2] = "Dificultad: Facil";
+    }
+}
+
 void Menu::elegirOpcion()
 {
     if (seleccion == 0) { // Nivel 1
@@ -219,7 +253,6 @@ void Menu::elegirOpcion()
         nivelPendiente = 1;
         sonidoTransicion.play();
     } else if (seleccion == 1) { // Nivel 2
-        // Solo entra si está desbloqueado
         if (nivel2Desbloqueado) {
             textosCinematica = textosDeEscena(2);
             estado = EN_CINEMATICA;
@@ -229,8 +262,10 @@ void Menu::elegirOpcion()
             sonidoTransicion.play();
         }
     } else if (seleccion == 2) {
-        estado = VIENDO_CONTROLES;
+        cambiarDificultad();
     } else if (seleccion == 3) {
+        estado = VIENDO_CONTROLES;
+    } else if (seleccion == 4) {
         salir = true;
     }
 }
@@ -239,12 +274,12 @@ void Menu::iniciarNivel(int numero)
 {
     delete nivelActual;
     nivelActual = nullptr;
-    nivelJugando = numero; // Guardamos qué nivel se está jugando
+    nivelJugando = numero;
 
     if (numero == 1) {
-        nivelActual = new NivelLateral(ancho, alto);
+        nivelActual = new NivelLateral(ancho, alto, dificultad);
     } else if (numero == 2) {
-        nivelActual = new NivelAereo(ancho, alto);
+        nivelActual = new NivelAereo(ancho, alto, dificultad);
     }
 
     if (nivelActual != nullptr) {
@@ -292,18 +327,14 @@ void Menu::dibujar(QPainter &pintor)
 
 void Menu::dibujarCinematica(QPainter &pintor)
 {
-    // Fondo completamente negro
     pintor.fillRect(0, 0, ancho, alto, Qt::black);
 
     if (paginaCinematica < textosCinematica.size()) {
-        // Dibujamos el texto actual ajustando su "Alfa" (transparencia) para el efecto fade-in
         pintor.setPen(QColor(255, 255, 255, (int)opacidadCinematica));
         pintor.setFont(QFont("Arial", 22, QFont::Bold));
 
-        // Centramos el texto en toda la pantalla
         pintor.drawText(QRect(0, 0, ancho, alto), Qt::AlignCenter, textosCinematica[paginaCinematica]);
 
-        // Mostrar mensaje para avanzar cuando el texto ya esté 100% visible
         if (opacidadCinematica >= 255.0) {
             pintor.setPen(QColor(120, 120, 120));
             pintor.setFont(QFont("Arial", 12));
@@ -323,10 +354,9 @@ void Menu::dibujarMenu(QPainter &pintor)
     pintor.setFont(QFont("Arial", 22));
 
     for (int i = 0; i < opciones.size(); i++) {
-        QRect zona(ancho / 2 - 150, 200 + i * 60, 300, 45);
+        QRect zona(ancho / 2 - 150, 200 + i * 50, 300, 40);
         QString textoMostrado = opciones[i];
 
-        // Lógica visual para mostrar que el Nivel 2 está bloqueado
         bool esNivelBloqueado = (i == 1 && !nivel2Desbloqueado);
         if (esNivelBloqueado) {
             textoMostrado += " (Bloqueado)";
@@ -334,7 +364,6 @@ void Menu::dibujarMenu(QPainter &pintor)
 
         if (i == seleccion) {
             pintor.fillRect(zona, QColor(120, 20, 20));
-            // Si está seleccionado pero bloqueado, texto rojizo oscuro
             if (esNivelBloqueado) {
                 pintor.setPen(QColor(180, 100, 100));
             } else {
@@ -354,7 +383,7 @@ void Menu::dibujarMenu(QPainter &pintor)
 
     pintor.setPen(QColor(120, 120, 120));
     pintor.setFont(QFont("Arial", 11));
-    pintor.drawText(QRect(0, alto - 40, ancho, 25), Qt::AlignCenter, "W / S: mover    Enter: elegir");
+    pintor.drawText(QRect(0, alto - 40, ancho, 25), Qt::AlignCenter, "W / S: mover    Enter: elegir    A / D: cambiar dificultad");
 }
 
 void Menu::dibujarControles(QPainter &pintor)
@@ -373,6 +402,7 @@ void Menu::dibujarControles(QPainter &pintor)
     pintor.drawText(QRect(0, 260, ancho, 30), Qt::AlignCenter, "E: interactuar");
     pintor.drawText(QRect(0, 300, ancho, 30), Qt::AlignCenter, "Nivel 2: mouse apunta, clic dispara, WASD mueve");
     pintor.drawText(QRect(0, 340, ancho, 30), Qt::AlignCenter, "Esc: volver al menu");
+
 
     pintor.setPen(QColor(120, 120, 120));
     pintor.setFont(QFont("Arial", 11));
